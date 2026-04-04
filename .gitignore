@@ -53,6 +53,8 @@ app.*.map.json
 .env.*
 !.env.example
 *.local
+.local/
+client_secret_*.json
 android/key.properties
 *.jks
 *.keystore
