@@ -24,7 +24,8 @@ class AuthController extends ChangeNotifier {
   final GoogleIdentityService _googleIdentityService;
 
   AuthState _state = const AuthState.initial();
-  StreamSubscription<GoogleSignInAuthenticationEvent>? _googleEventsSubscription;
+  StreamSubscription<GoogleSignInAuthenticationEvent>?
+  _googleEventsSubscription;
   bool _didBootstrap = false;
   bool _isDisposed = false;
 
@@ -47,7 +48,9 @@ class AuthController extends ChangeNotifier {
       final AuthSession? storedSession = await _sessionStorage.read();
 
       if (storedSession != null) {
-        final AuthSession restoredSession = await _restoreSession(storedSession);
+        final AuthSession restoredSession = await _restoreSession(
+          storedSession,
+        );
         _updateState(_state.withSession(restoredSession));
       }
     } catch (error) {
@@ -67,6 +70,11 @@ class AuthController extends ChangeNotifier {
     try {
       await _googleIdentityService.authenticate();
     } catch (error) {
+      if (isCanceledGoogleSignInError(error)) {
+        _updateState(_state.clearError().withBusy(false));
+        return;
+      }
+
       _setError(error);
       _updateState(_state.withBusy(false));
     }
@@ -115,7 +123,9 @@ class AuthController extends ChangeNotifier {
     } finally {
       await _sessionStorage.clear();
       await _googleIdentityService.signOut();
-      _updateState(const AuthState(session: null, isBusy: false, errorMessage: null));
+      _updateState(
+        const AuthState(session: null, isBusy: false, errorMessage: null),
+      );
     }
   }
 

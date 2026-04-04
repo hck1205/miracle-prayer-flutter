@@ -9,10 +9,10 @@ class GoogleWebSignInButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return google_web.renderButton(
       configuration: GSIButtonConfiguration(
-        theme: GSIButtonTheme.filledBlue,
+        theme: GSIButtonTheme.outline,
         size: GSIButtonSize.large,
-        text: GSIButtonText.continueWith,
-        shape: GSIButtonShape.pill,
+        text: GSIButtonText.signinWith,
+        shape: GSIButtonShape.rectangular,
       ),
     );
   }
