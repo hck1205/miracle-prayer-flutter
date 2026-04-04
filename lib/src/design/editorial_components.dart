@@ -181,11 +181,7 @@ class EditorialSecondaryButton extends StatelessWidget {
 }
 
 class EditorialFactRow extends StatelessWidget {
-  const EditorialFactRow({
-    super.key,
-    required this.label,
-    required this.value,
-  });
+  const EditorialFactRow({super.key, required this.label, required this.value});
 
   final String label;
   final String value;
@@ -239,6 +235,32 @@ class EditorialStatusMessage extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class EditorialInlineLoader extends StatelessWidget {
+  const EditorialInlineLoader({super.key, this.width = 120, this.height = 3});
+
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(height),
+        child: LinearProgressIndicator(
+          minHeight: height,
+          backgroundColor: EditorialColors.outlineVariant.withValues(
+            alpha: 0.24,
+          ),
+          valueColor: const AlwaysStoppedAnimation<Color>(
+            EditorialColors.primary,
+          ),
+        ),
+      ),
     );
   }
 }

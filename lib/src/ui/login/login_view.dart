@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 
+import "../../design/editorial_components.dart";
 import "../../design/editorial_tokens.dart";
 import "login_components.dart";
 
@@ -52,7 +53,7 @@ class LoginView extends StatelessWidget {
                         padding: EdgeInsets.symmetric(
                           vertical: EditorialSpacing.large,
                         ),
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: EditorialInlineLoader(),
                       )
                     else if (!googleClientIdConfigured)
                       const LoginStatusNote(

@@ -17,8 +17,6 @@ class GoogleIdentityService {
   Stream<GoogleSignInAuthenticationEvent> get authenticationEvents =>
       _googleSignIn.authenticationEvents;
 
-  bool get supportsAuthenticate => _googleSignIn.supportsAuthenticate();
-
   Future<void> initialize() {
     _initialization ??= _googleSignIn
         .initialize(clientId: _clientId, serverClientId: _serverClientId)

@@ -31,8 +31,6 @@ class AuthController extends ChangeNotifier {
 
   AuthState get state => _state;
 
-  bool get supportsAuthenticate => _googleIdentityService.supportsAuthenticate;
-
   Future<void> bootstrap() async {
     if (_didBootstrap) {
       return;
