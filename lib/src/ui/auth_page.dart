@@ -8,6 +8,8 @@ import "../auth/auth_api_client.dart";
 import "../auth/auth_models.dart";
 import "../auth/auth_session_storage.dart";
 import "../auth/google_identity_service.dart";
+import "../design/editorial_components.dart";
+import "../design/editorial_tokens.dart";
 import "auth_widgets.dart";
 
 class AuthPage extends StatefulWidget {
@@ -289,63 +291,139 @@ class _AuthPageState extends State<AuthPage> {
     return Scaffold(
       body: DecoratedBox(
         decoration: const BoxDecoration(
+          color: EditorialColors.surface,
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: <Color>[
-              Color(0xFFF9F2E6),
-              Color(0xFFF2E5D3),
-              Color(0xFFE7D7C1),
+              EditorialColors.surface,
+              EditorialColors.surfaceLow,
+              EditorialColors.surface,
             ],
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 960),
-                child: Wrap(
-                  spacing: 24,
-                  runSpacing: 24,
-                  alignment: WrapAlignment.center,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: <Widget>[
-                    SizedBox(
-                      width: 360,
-                      child: PrayerIntro(
-                        isAuthenticated: session != null,
-                        user: session?.user,
-                      ),
+          child: Stack(
+            children: <Widget>[
+              Positioned(
+                top: -80,
+                right: -40,
+                child: Container(
+                  width: 320,
+                  height: 320,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: <Color>[
+                        EditorialColors.reflectionGlow,
+                        Colors.transparent,
+                      ],
                     ),
-                    SizedBox(
-                      width: 420,
-                      child: session == null
-                          ? LoginCard(
-                              isBusy: _isBusy,
-                              errorMessage: _errorMessage,
-                              backendBaseUrl:
-                                  AppConfig.normalizedBackendBaseUrl,
-                              googleClientIdConfigured:
-                                  AppConfig.googleClientId.isNotEmpty,
-                              supportsAuthenticate:
-                                  _googleIdentityService.supportsAuthenticate,
-                              onGoogleSignIn: _signInWithGoogle,
-                            )
-                          : SessionCard(
-                              session: session,
-                              isBusy: _isBusy,
-                              errorMessage: _errorMessage,
-                              backendBaseUrl:
-                                  AppConfig.normalizedBackendBaseUrl,
-                              onRefreshSession: _refreshSession,
-                              onLogout: _logout,
-                            ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(EditorialSpacing.mobileGutter),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1100),
+                    child: LayoutBuilder(
+                      builder: (BuildContext context, BoxConstraints constraints) {
+                        final bool stacked = constraints.maxWidth < 900;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Align(
+                              alignment: Alignment.topCenter,
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 640),
+                                child: EditorialGlassBar(
+                                  child: Row(
+                                    children: <Widget>[
+                                      const EditorialMetaText("Reflection Header"),
+                                      const Spacer(),
+                                      Text(
+                                        session == null
+                                            ? "Google identity is waiting"
+                                            : "Session is active",
+                                        style: Theme.of(context).textTheme.bodyMedium,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: EditorialSpacing.xLarge),
+                            if (stacked)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  PrayerIntro(
+                                    isAuthenticated: session != null,
+                                    user: session?.user,
+                                  ),
+                                  const SizedBox(height: EditorialSpacing.large),
+                                  _AuthPanel(
+                                    session: session,
+                                    isBusy: _isBusy,
+                                    errorMessage: _errorMessage,
+                                    backendBaseUrl:
+                                        AppConfig.normalizedBackendBaseUrl,
+                                    googleClientIdConfigured:
+                                        AppConfig.googleClientId.isNotEmpty,
+                                    supportsAuthenticate:
+                                        _googleIdentityService.supportsAuthenticate,
+                                    onGoogleSignIn: _signInWithGoogle,
+                                    onRefreshSession: _refreshSession,
+                                    onLogout: _logout,
+                                  ),
+                                ],
+                              )
+                            else
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Expanded(
+                                    flex: 6,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        top: EditorialSpacing.large,
+                                        right: EditorialSpacing.xLarge,
+                                      ),
+                                      child: PrayerIntro(
+                                        isAuthenticated: session != null,
+                                        user: session?.user,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 5,
+                                    child: _AuthPanel(
+                                      session: session,
+                                      isBusy: _isBusy,
+                                      errorMessage: _errorMessage,
+                                      backendBaseUrl:
+                                          AppConfig.normalizedBackendBaseUrl,
+                                      googleClientIdConfigured:
+                                          AppConfig.googleClientId.isNotEmpty,
+                                      supportsAuthenticate:
+                                          _googleIdentityService.supportsAuthenticate,
+                                      onGoogleSignIn: _signInWithGoogle,
+                                      onRefreshSession: _refreshSession,
+                                      onLogout: _logout,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -364,5 +442,50 @@ class _AuthPageState extends State<AuthPage> {
     }
 
     return rawMessage;
+  }
+}
+
+class _AuthPanel extends StatelessWidget {
+  const _AuthPanel({
+    required this.session,
+    required this.isBusy,
+    required this.errorMessage,
+    required this.backendBaseUrl,
+    required this.googleClientIdConfigured,
+    required this.supportsAuthenticate,
+    required this.onGoogleSignIn,
+    required this.onRefreshSession,
+    required this.onLogout,
+  });
+
+  final AuthSession? session;
+  final bool isBusy;
+  final String? errorMessage;
+  final String backendBaseUrl;
+  final bool googleClientIdConfigured;
+  final bool supportsAuthenticate;
+  final VoidCallback onGoogleSignIn;
+  final VoidCallback onRefreshSession;
+  final VoidCallback onLogout;
+
+  @override
+  Widget build(BuildContext context) {
+    return session == null
+        ? LoginCard(
+            isBusy: isBusy,
+            errorMessage: errorMessage,
+            backendBaseUrl: backendBaseUrl,
+            googleClientIdConfigured: googleClientIdConfigured,
+            supportsAuthenticate: supportsAuthenticate,
+            onGoogleSignIn: onGoogleSignIn,
+          )
+        : SessionCard(
+            session: session!,
+            isBusy: isBusy,
+            errorMessage: errorMessage,
+            backendBaseUrl: backendBaseUrl,
+            onRefreshSession: onRefreshSession,
+            onLogout: onLogout,
+          );
   }
 }

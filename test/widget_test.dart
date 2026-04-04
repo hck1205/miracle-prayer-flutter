@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:flutter_test/flutter_test.dart";
 
+import "package:miracle_prayer_flutter/src/design/editorial_theme.dart";
 import "package:miracle_prayer_flutter/src/ui/auth_widgets.dart";
 
 void main() {
@@ -8,7 +9,8 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
+        theme: EditorialTheme.buildTheme(),
         home: Scaffold(
           body: LoginCard(
             isBusy: false,
@@ -22,8 +24,8 @@ void main() {
       ),
     );
 
-    expect(find.text("Sign in"), findsOneWidget);
-    expect(find.textContaining("Google"), findsWidgets);
+    expect(find.text("Sign in gently."), findsOneWidget);
+    expect(find.text("Continue with Google"), findsOneWidget);
   });
 }
 
