@@ -7,6 +7,8 @@ import "../../auth/auth_models.dart";
 import "../../design/editorial_tokens.dart";
 import "../../feed/feed_api_client.dart";
 import "../../feed/feed_controller.dart";
+import "../../feed/feed_models.dart";
+import "../../feed/feed_reaction.dart";
 import "feed_view.dart";
 
 class FeedScreen extends StatefulWidget {
@@ -78,9 +80,7 @@ class _FeedScreenState extends State<FeedScreen> {
             selectedTabIndex: _selectedTabIndex,
             onSelectedTab: _handleBottomTabSelected,
             onRetry: _controller.refreshFeed,
-            onLove: (_) => _showNotice("Love is not connected yet."),
-            onAmen: (_) => _showNotice("Amen is not connected yet."),
-            onWithYou: (_) => _showNotice("With you is not connected yet."),
+            onReact: _handleReactionSelected,
           ),
         );
       },
@@ -162,6 +162,10 @@ class _FeedScreenState extends State<FeedScreen> {
         _showNotice("Activity is not connected yet.");
         break;
     }
+  }
+
+  void _handleReactionSelected(FeedPost post, FeedReactionKind reaction) {
+    unawaited(_controller.reactToPost(post.id, reaction));
   }
 
   void _showNotice(String message) {

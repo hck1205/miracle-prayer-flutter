@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../../design/editorial_components.dart";
 import "../../design/editorial_tokens.dart";
 import "../../feed/feed_models.dart";
+import "../../feed/feed_reaction.dart";
 import "../../feed/feed_state.dart";
 import "feed_widgets.dart";
 
@@ -13,18 +14,14 @@ class FeedView extends StatelessWidget {
     required this.selectedTabIndex,
     required this.onSelectedTab,
     required this.onRetry,
-    required this.onLove,
-    required this.onAmen,
-    required this.onWithYou,
+    required this.onReact,
   });
 
   final FeedState state;
   final int selectedTabIndex;
   final ValueChanged<int> onSelectedTab;
   final VoidCallback onRetry;
-  final ValueChanged<FeedPost> onLove;
-  final ValueChanged<FeedPost> onAmen;
-  final ValueChanged<FeedPost> onWithYou;
+  final void Function(FeedPost post, FeedReactionKind reaction) onReact;
 
   @override
   Widget build(BuildContext context) {
@@ -79,9 +76,7 @@ class FeedView extends StatelessWidget {
       for (int index = 0; index < items.length; index++) ...<Widget>[
         PrayerCard(
           item: items[index],
-          onLove: () => onLove(items[index]),
-          onAmen: () => onAmen(items[index]),
-          onWithYou: () => onWithYou(items[index]),
+          onReact: (FeedReactionKind reaction) => onReact(items[index], reaction),
         ),
         if (index < items.length - 1)
           const Padding(

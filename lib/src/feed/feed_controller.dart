@@ -2,6 +2,8 @@ import "package:flutter/foundation.dart";
 
 import "feed_api_client.dart";
 import "feed_error_message.dart";
+import "feed_models.dart";
+import "feed_reaction.dart";
 import "feed_state.dart";
 
 class FeedController extends ChangeNotifier {
@@ -47,6 +49,39 @@ class FeedController extends ChangeNotifier {
           isLoading: false,
           errorMessage: mapFeedErrorMessage(error),
         ),
+      );
+    }
+  }
+
+  Future<void> reactToPost(String postId, FeedReactionKind reaction) async {
+    try {
+      final FeedPostReactionResult result = await _feedApiClient.reactToPost(
+        _accessToken,
+        postId: postId,
+        reaction: reaction,
+      );
+
+      final List<FeedPost> nextItems = _state.items
+          .map((FeedPost item) {
+            if (item.id != result.postId) {
+              return item;
+            }
+
+            return item.copyWith(
+              reactionCount: result.reactionCount,
+              reactionSummary: result.reactionSummary,
+              viewerReaction: result.viewerReaction,
+              clearViewerReaction: result.viewerReaction == null,
+            );
+          })
+          .toList(growable: false);
+
+      _updateState(
+        _state.copyWith(items: nextItems, clearError: true),
+      );
+    } catch (error) {
+      _updateState(
+        _state.copyWith(errorMessage: mapFeedErrorMessage(error)),
       );
     }
   }
