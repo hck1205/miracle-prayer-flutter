@@ -2,10 +2,12 @@ import "dart:async";
 
 import "package:google_sign_in/google_sign_in.dart";
 
+import "../core/utils/string_utils.dart";
+
 class GoogleIdentityService {
   GoogleIdentityService({String? clientId, String? serverClientId})
-    : _clientId = _normalize(clientId),
-      _serverClientId = _normalize(serverClientId);
+    : _clientId = normalizeNullable(clientId),
+      _serverClientId = normalizeNullable(serverClientId);
 
   final String? _clientId;
   final String? _serverClientId;
@@ -54,13 +56,5 @@ class GoogleIdentityService {
     }
 
     return idToken;
-  }
-
-  static String? _normalize(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return null;
-    }
-
-    return value.trim();
   }
 }

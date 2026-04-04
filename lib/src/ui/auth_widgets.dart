@@ -2,6 +2,7 @@ import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 
 import "../auth/auth_models.dart";
+import "../auth/auth_view_helpers.dart";
 import "../design/editorial_components.dart";
 import "../design/editorial_tokens.dart";
 import "google_sign_in_button.dart";
@@ -23,7 +24,7 @@ class PrayerIntro extends StatelessWidget {
         ? "A quieter place for reflection, now connected."
         : "A living page for prayer, reflection, and stillness.";
     final String summary = isAuthenticated
-        ? "${user?.name ?? user?.email ?? "Your account"} is signed in and the session has been restored through miracle-prayer-backend."
+        ? "${authSummaryName(user)} is signed in and the session has been restored through miracle-prayer-backend."
         : "Google identity opens the door, and the backend shapes that trust into an app session built for continuity.";
 
     return Column(
@@ -262,8 +263,7 @@ class SessionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AuthenticatedUser user = session.user;
-    final String leading = (user.name ?? user.email).trim().characters.first
-        .toUpperCase();
+    final String leading = authLeadingCharacter(user);
 
     return EditorialSheet(
       child: Column(
@@ -295,7 +295,7 @@ class SessionCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      user.name ?? "Authenticated reader",
+                      authDisplayName(user),
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     const SizedBox(height: 4),
@@ -320,7 +320,7 @@ class SessionCard extends StatelessWidget {
           const EditorialDivider(),
           EditorialFactRow(
             label: "Refresh Expires In",
-            value: "${session.refreshExpiresIn} seconds",
+            value: formatRefreshExpiresIn(session.refreshExpiresIn),
           ),
           if (errorMessage case final String message) ...<Widget>[
             const SizedBox(height: EditorialSpacing.medium),
