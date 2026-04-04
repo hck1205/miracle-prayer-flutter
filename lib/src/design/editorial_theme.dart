@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 
+import "editorial_typography.dart";
 import "editorial_tokens.dart";
 
 abstract final class EditorialTheme {
@@ -16,7 +17,8 @@ abstract final class EditorialTheme {
       onSurface: EditorialColors.onSurface,
     );
 
-    final TextTheme textTheme = const TextTheme(
+    final TextTheme textTheme = _withFallbackTextTheme(
+      const TextTheme(
       displayLarge: TextStyle(
         fontSize: 40,
         height: 1.05,
@@ -81,11 +83,13 @@ abstract final class EditorialTheme {
         fontWeight: FontWeight.w600,
         color: EditorialColors.onSurfaceMuted,
       ),
-    ).apply(fontFamily: "Inter");
+    ),
+    );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      fontFamily: EditorialTypography.displayFontFamily,
       scaffoldBackgroundColor: EditorialColors.surface,
       textTheme: textTheme,
       dividerColor: EditorialColors.outlineVariant.withValues(alpha: 0.3),
@@ -167,5 +171,29 @@ abstract final class EditorialTheme {
         errorStyle: textTheme.bodyMedium?.copyWith(color: EditorialColors.error),
       ),
     );
+  }
+
+  static TextTheme _withFallbackTextTheme(TextTheme textTheme) {
+    return textTheme.copyWith(
+      displayLarge: _withFallback(textTheme.displayLarge),
+      displayMedium: _withFallback(textTheme.displayMedium),
+      displaySmall: _withFallback(textTheme.displaySmall),
+      headlineLarge: _withFallback(textTheme.headlineLarge),
+      headlineMedium: _withFallback(textTheme.headlineMedium),
+      headlineSmall: _withFallback(textTheme.headlineSmall),
+      titleLarge: _withFallback(textTheme.titleLarge),
+      titleMedium: _withFallback(textTheme.titleMedium),
+      titleSmall: _withFallback(textTheme.titleSmall),
+      bodyLarge: _withFallback(textTheme.bodyLarge),
+      bodyMedium: _withFallback(textTheme.bodyMedium),
+      bodySmall: _withFallback(textTheme.bodySmall),
+      labelLarge: _withFallback(textTheme.labelLarge),
+      labelMedium: _withFallback(textTheme.labelMedium),
+      labelSmall: _withFallback(textTheme.labelSmall),
+    );
+  }
+
+  static TextStyle? _withFallback(TextStyle? style) {
+    return EditorialTypography.withSansFallback(style);
   }
 }

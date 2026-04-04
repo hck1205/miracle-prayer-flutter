@@ -65,12 +65,12 @@ class JsonApiClient {
       throw _exceptionFromResponse(response);
     }
 
-    return jsonDecode(response.body) as Map<String, dynamic>;
+    return jsonDecode(_decodeResponseBody(response)) as Map<String, dynamic>;
   }
 
   ApiException _exceptionFromResponse(http.Response response) {
     try {
-      final Object? decoded = jsonDecode(response.body);
+      final Object? decoded = jsonDecode(_decodeResponseBody(response));
 
       if (decoded is Map<String, dynamic>) {
         final Object? message = decoded["message"];
@@ -88,5 +88,9 @@ class JsonApiClient {
     }
 
     return ApiException("Request failed with status ${response.statusCode}.");
+  }
+
+  String _decodeResponseBody(http.Response response) {
+    return utf8.decode(response.bodyBytes);
   }
 }
