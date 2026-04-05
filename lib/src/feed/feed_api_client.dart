@@ -80,7 +80,8 @@ class FeedApiClient {
       headers: _jsonApiClient.bearerHeaders(accessToken),
     );
 
-    final Map<String, dynamic>? draftJson = json["draft"] as Map<String, dynamic>?;
+    final Map<String, dynamic>? draftJson =
+        json["draft"] as Map<String, dynamic>?;
     if (draftJson == null) {
       return null;
     }
@@ -116,6 +117,13 @@ class FeedApiClient {
   Future<void> discardDraft(String accessToken, {required String postId}) {
     return _jsonApiClient.postEmpty(
       "/v1/feed/$postId/discard",
+      headers: _jsonApiClient.bearerHeaders(accessToken),
+    );
+  }
+
+  Future<void> deletePost(String accessToken, {required String postId}) {
+    return _jsonApiClient.deleteEmpty(
+      "/v1/feed/$postId",
       headers: _jsonApiClient.bearerHeaders(accessToken),
     );
   }

@@ -191,6 +191,15 @@ class FeedController extends ChangeNotifier {
     return _feedApiClient.discardDraft(_accessToken, postId: postId);
   }
 
+  Future<void> deletePost(String postId) async {
+    await _feedApiClient.deletePost(_accessToken, postId: postId);
+
+    final List<FeedPost> nextItems = _state.items
+        .where((FeedPost item) => item.id != postId)
+        .toList(growable: false);
+    _updateState(_state.copyWith(items: nextItems, clearError: true));
+  }
+
   void _updateState(FeedState nextState) {
     if (_isDisposed) {
       return;

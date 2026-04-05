@@ -40,11 +40,19 @@ class JsonApiClient {
     return _decodeJsonMap(response);
   }
 
-  Future<void> postEmpty(
-    String path, {
-    Map<String, String>? headers,
-  }) async {
+  Future<void> postEmpty(String path, {Map<String, String>? headers}) async {
     final http.Response response = await _httpClient.post(
+      _buildUri(path),
+      headers: headers,
+    );
+
+    if (response.statusCode >= 400) {
+      throw _exceptionFromResponse(response);
+    }
+  }
+
+  Future<void> deleteEmpty(String path, {Map<String, String>? headers}) async {
+    final http.Response response = await _httpClient.delete(
       _buildUri(path),
       headers: headers,
     );

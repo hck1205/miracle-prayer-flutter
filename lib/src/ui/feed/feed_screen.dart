@@ -12,6 +12,7 @@ import "../../feed/feed_reaction.dart";
 import "feed_account_sheet.dart";
 import "feed_bottom_bar.dart";
 import "feed_create_view.dart";
+import "feed_delete_confirm_dialog.dart";
 import "feed_draft_resume_dialog.dart";
 import "feed_scroll_pagination.dart";
 import "feed_top_bar.dart";
@@ -168,6 +169,29 @@ class _FeedScreenState extends State<FeedScreen> {
     });
   }
 
+  Future<void> _handleDeleteSelected(FeedPost post) async {
+    final bool confirmed = await showFeedDeleteConfirmDialog(context);
+    if (!confirmed || !mounted) {
+      return;
+    }
+
+    try {
+      await _controller.deletePost(post.id);
+
+      if (!mounted) {
+        return;
+      }
+
+      _showNotice("Prayer deleted.");
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      _showNotice(mapFeedErrorMessage(error));
+    }
+  }
+
   Widget _buildCurrentTab() {
     switch (_selectedTabIndex) {
       case 1:
@@ -208,6 +232,8 @@ class _FeedScreenState extends State<FeedScreen> {
               onLoadMore: _controller.loadMore,
               onReact: _handleReactionSelected,
               onEdit: _handleEditSelected,
+              onDelete: (FeedPost post) =>
+                  unawaited(_handleDeleteSelected(post)),
             );
           },
         );
@@ -412,7 +438,8 @@ class _FeedScreenState extends State<FeedScreen> {
     _isCheckingDraftEntry = true;
 
     try {
-      final FeedDraft? latestDraft = await _resolveLatestDraftForComposerEntry();
+      final FeedDraft? latestDraft =
+          await _resolveLatestDraftForComposerEntry();
 
       if (!mounted || _selectedTabIndex != 1 || _editingPost != null) {
         return;

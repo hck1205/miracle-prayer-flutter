@@ -14,11 +14,13 @@ class PrayerCard extends StatelessWidget {
     required this.item,
     required this.onReact,
     required this.onEdit,
+    required this.onDelete,
   });
 
   final FeedPost item;
   final ValueChanged<FeedReactionKind> onReact;
   final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +38,7 @@ class PrayerCard extends StatelessWidget {
               ),
               if (item.viewerCanEdit) ...<Widget>[
                 const SizedBox(width: 8),
-                _PrayerCardMenuButton(onEdit: onEdit),
+                _PrayerCardMenuButton(onEdit: onEdit, onDelete: onDelete),
               ],
             ],
           ),
@@ -74,9 +76,29 @@ class PrayerCard extends StatelessWidget {
 }
 
 class _PrayerCardMenuButton extends StatelessWidget {
-  const _PrayerCardMenuButton({required this.onEdit});
+  const _PrayerCardMenuButton({required this.onEdit, required this.onDelete});
 
   final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  static Color _softenMenuTextColor(Color color) {
+    return color.withValues(alpha: 0.86);
+  }
+
+  static WidgetStateProperty<TextStyle?> _menuLabelTextStyle(Color color) {
+    return WidgetStateProperty.resolveWith((Set<WidgetState> states) {
+      final bool isHovered =
+          states.contains(WidgetState.hovered) ||
+          states.contains(WidgetState.focused) ||
+          states.contains(WidgetState.pressed);
+
+      return TextStyle(
+        fontSize: 13,
+        fontWeight: isHovered ? FontWeight.w600 : FontWeight.w400,
+        color: color,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,12 +121,19 @@ class _PrayerCardMenuButton extends StatelessWidget {
         if (value == "edit") {
           onEdit();
         }
+
+        if (value == "delete") {
+          onDelete();
+        }
       },
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
         PopupMenuItem<String>(
           value: "edit",
           height: 40,
           padding: const EdgeInsets.all(10),
+          labelTextStyle: _menuLabelTextStyle(
+            _softenMenuTextColor(EditorialColors.onSurface),
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: const <Widget>[
@@ -114,14 +143,27 @@ class _PrayerCardMenuButton extends StatelessWidget {
                 color: EditorialColors.onSurface,
               ),
               SizedBox(width: 10),
-              Text(
-                "Edit",
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: EditorialColors.onSurface,
-                ),
+              Text("Edit"),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: "delete",
+          height: 40,
+          padding: const EdgeInsets.all(10),
+          labelTextStyle: _menuLabelTextStyle(
+            _softenMenuTextColor(EditorialColors.primary),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const <Widget>[
+              Icon(
+                Icons.delete_outline,
+                size: 16,
+                color: EditorialColors.primary,
               ),
+              SizedBox(width: 10),
+              Text("Delete"),
             ],
           ),
         ),
