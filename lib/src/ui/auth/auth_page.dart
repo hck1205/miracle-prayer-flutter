@@ -2,15 +2,16 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 
-import "../app_config.dart";
-import "../auth/auth_api_client.dart";
-import "../auth/auth_controller.dart";
-import "../auth/auth_models.dart";
-import "../auth/auth_session_storage.dart";
-import "../auth/auth_state.dart";
-import "../auth/google_identity_service.dart";
-import "../design/editorial_tokens.dart";
-import "auth_widgets.dart";
+import "../../app_config.dart";
+import "../../auth/auth_api_client.dart";
+import "../../auth/auth_controller.dart";
+import "../../auth/auth_models.dart";
+import "../../auth/auth_session_storage.dart";
+import "../../auth/auth_state.dart";
+import "../../auth/google_identity_service.dart";
+import "../../design/editorial_tokens.dart";
+import "../feed/feed_page.dart";
+import "login_view.dart";
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -100,14 +101,17 @@ class _AuthPageState extends State<AuthPage> {
           );
         }
 
-        return FeedScreen(session: session, onLogout: _controller.logout);
+        return FeedPageShell(session: session, onLogout: _controller.logout);
       },
     );
   }
 
   void _showGuestModeNotice() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Guest mode is not connected yet.")),
+      const SnackBar(
+        content: Text("Guest mode is not connected yet."),
+        duration: Duration(seconds: 2),
+      ),
     );
   }
 }

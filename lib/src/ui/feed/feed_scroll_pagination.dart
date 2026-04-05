@@ -24,6 +24,8 @@ class FeedScrollPagination {
       return;
     }
 
+    // Trigger a little early so the next page can arrive before the user hits
+    // the end of the current list.
     if (scrollController.position.extentAfter < preloadThreshold) {
       onLoadMore();
     }

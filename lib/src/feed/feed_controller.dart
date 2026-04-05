@@ -29,6 +29,8 @@ class FeedController extends ChangeNotifier {
       return;
     }
 
+    // The screen can rebuild multiple times during startup. Bootstrap ensures
+    // the first feed request is only kicked off once per controller instance.
     _didBootstrap = true;
     await refreshFeed();
   }
@@ -93,6 +95,8 @@ class FeedController extends ChangeNotifier {
         cursor: cursor,
       );
 
+      // Cursor-based pagination can briefly return overlapping items while the
+      // list is changing server-side, so we de-duplicate by id before append.
       final Set<String> existingIds = _state.items
           .map((FeedPost item) => item.id)
           .toSet();
@@ -128,20 +132,22 @@ class FeedController extends ChangeNotifier {
         reaction: reaction,
       );
 
-      final List<FeedPost> nextItems = _state.items
-          .map((FeedPost item) {
-            if (item.id != result.postId) {
-              return item;
-            }
+      final int postIndex = _state.items.indexWhere(
+        (FeedPost item) => item.id == result.postId,
+      );
+      if (postIndex == -1) {
+        return;
+      }
 
-            return item.copyWith(
-              reactionCount: result.reactionCount,
-              reactionSummary: result.reactionSummary,
-              viewerReaction: result.viewerReaction,
-              clearViewerReaction: result.viewerReaction == null,
-            );
-          })
-          .toList(growable: false);
+      // Replacing only the changed post keeps the update work bounded even
+      // when the visible feed grows large.
+      final List<FeedPost> nextItems = List<FeedPost>.of(_state.items);
+      nextItems[postIndex] = nextItems[postIndex].copyWith(
+        reactionCount: result.reactionCount,
+        reactionSummary: result.reactionSummary,
+        viewerReaction: result.viewerReaction,
+        clearViewerReaction: result.viewerReaction == null,
+      );
 
       _updateState(_state.copyWith(items: nextItems, clearError: true));
     } catch (error) {

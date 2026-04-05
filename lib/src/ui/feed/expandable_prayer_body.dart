@@ -18,12 +18,13 @@ class ExpandablePrayerBody extends StatefulWidget {
 
 class _ExpandablePrayerBodyState extends State<ExpandablePrayerBody> {
   static const int _collapsedMaxLines = 8;
-  static const String _expandLabel = "더 보기";
+  static const String _expandLabel = "Read more";
 
   bool _isExpanded = false;
   bool _isExpandHovered = false;
   double? _cachedMaxWidth;
   bool? _cachedHasOverflow;
+  TextScaler? _cachedTextScaler;
 
   @override
   void didUpdateWidget(covariant ExpandablePrayerBody oldWidget) {
@@ -31,6 +32,7 @@ class _ExpandablePrayerBodyState extends State<ExpandablePrayerBody> {
     if (oldWidget.body != widget.body || oldWidget.style != widget.style) {
       _cachedMaxWidth = null;
       _cachedHasOverflow = null;
+      _cachedTextScaler = null;
       _isExpanded = false;
     }
   }
@@ -42,6 +44,7 @@ class _ExpandablePrayerBodyState extends State<ExpandablePrayerBody> {
         final bool hasOverflow = _resolveHasOverflow(
           maxWidth: constraints.maxWidth,
           textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
         );
 
         if (_isExpanded || !hasOverflow) {
@@ -83,8 +86,13 @@ class _ExpandablePrayerBodyState extends State<ExpandablePrayerBody> {
   bool _resolveHasOverflow({
     required double maxWidth,
     required TextDirection textDirection,
+    required TextScaler textScaler,
   }) {
-    if (_cachedMaxWidth == maxWidth && _cachedHasOverflow != null) {
+    // Measuring text is relatively expensive, so we reuse the last result until
+    // the layout width or text scaling changes.
+    if (_cachedMaxWidth == maxWidth &&
+        _cachedTextScaler == textScaler &&
+        _cachedHasOverflow != null) {
       return _cachedHasOverflow!;
     }
 
@@ -92,10 +100,12 @@ class _ExpandablePrayerBodyState extends State<ExpandablePrayerBody> {
       text: TextSpan(text: widget.body, style: widget.style),
       maxLines: _collapsedMaxLines,
       textDirection: textDirection,
+      textScaler: textScaler,
     )..layout(maxWidth: maxWidth);
 
     _cachedMaxWidth = maxWidth;
     _cachedHasOverflow = painter.didExceedMaxLines;
+    _cachedTextScaler = textScaler;
     return _cachedHasOverflow!;
   }
 }

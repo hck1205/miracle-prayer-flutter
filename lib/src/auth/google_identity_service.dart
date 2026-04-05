@@ -18,6 +18,8 @@ class GoogleIdentityService {
       _googleSignIn.authenticationEvents;
 
   Future<void> initialize() {
+    // Google Sign-In setup is shared by bootstrap, login, and logout paths, so
+    // we memoize the initialization future instead of reinitializing each time.
     _initialization ??= _googleSignIn
         .initialize(clientId: _clientId, serverClientId: _serverClientId)
         .then((_) {

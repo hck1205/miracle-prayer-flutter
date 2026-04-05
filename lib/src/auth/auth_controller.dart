@@ -36,6 +36,8 @@ class AuthController extends ChangeNotifier {
       return;
     }
 
+    // Google SDK initialization and session restoration are both async, so we
+    // guard bootstrap to avoid racing duplicate startup work.
     _didBootstrap = true;
     _updateState(_state.withBusy(true).clearError());
 
@@ -135,6 +137,8 @@ class AuthController extends ChangeNotifier {
   }
 
   void _bindGoogleAuthenticationEvents() {
+    // The Google SDK can emit sign-in results after `authenticate()` returns, so
+    // the controller listens once and keeps backend exchange in one place.
     _googleEventsSubscription ??= _googleIdentityService.authenticationEvents
         .listen(_handleGoogleAuthenticationEvent, onError: _setError);
   }
@@ -161,6 +165,8 @@ class AuthController extends ChangeNotifier {
       await _sessionStorage.write(restoredSession);
       return restoredSession;
     } catch (_) {
+      // If the access token expired while the app was closed, we fall back to a
+      // refresh before giving up on the persisted session.
       final AuthSession refreshedSession = await _authApiClient.refreshSession(
         storedSession,
       );
@@ -188,6 +194,8 @@ class AuthController extends ChangeNotifier {
       await _sessionStorage.write(nextSession);
       _updateState(_state.withSession(nextSession));
     } catch (error) {
+      // Keep the Google session and backend session aligned. If token exchange
+      // fails, signing out avoids leaving the SDK in a half-signed-in state.
       await _googleIdentityService.signOut();
       _setError(error);
     } finally {

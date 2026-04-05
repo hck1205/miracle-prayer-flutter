@@ -2,26 +2,32 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 
-import "../../app_config.dart";
 import "../../auth/auth_models.dart";
 import "../../design/editorial_components.dart";
 import "../../design/editorial_tokens.dart";
-import "../../feed/feed_api_client.dart";
 import "../../feed/feed_controller.dart";
 import "../../feed/feed_error_message.dart";
 import "../../feed/feed_models.dart";
 import "../../feed/feed_reaction.dart";
+import "feed_account_sheet.dart";
 import "feed_bottom_bar.dart";
 import "feed_create_view.dart";
+import "feed_draft_resume_dialog.dart";
 import "feed_scroll_pagination.dart";
 import "feed_top_bar.dart";
 import "feed_view.dart";
 
 class FeedScreen extends StatefulWidget {
-  const FeedScreen({super.key, required this.session, required this.onLogout});
+  const FeedScreen({
+    super.key,
+    required this.session,
+    required this.onLogout,
+    required this.controller,
+  });
 
   final AuthSession session;
   final VoidCallback onLogout;
+  final FeedController controller;
 
   @override
   State<FeedScreen> createState() => _FeedScreenState();
@@ -35,11 +41,13 @@ class _FeedScreenState extends State<FeedScreen> {
   late final FeedScrollPagination _scrollPagination;
   late final TextEditingController _composerController;
   FeedDraft? _activeDraft;
+  FeedDraft? _cachedLatestDraft;
   FeedPost? _editingPost;
   int _selectedTabIndex = 0;
   bool _postAnonymously = _defaultAnonymousPosting;
   bool _isSubmittingComposer = false;
   bool _isCheckingDraftEntry = false;
+  bool _hasResolvedLatestDraft = false;
   String _composerBaselineBody = "";
   bool _composerBaselineAnonymous = _defaultAnonymousPosting;
 
@@ -47,21 +55,12 @@ class _FeedScreenState extends State<FeedScreen> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    _composerController = TextEditingController()
-      ..addListener(() {
-        if (mounted) {
-          setState(() {});
-        }
-      });
-    _controller = FeedController(
-      feedApiClient: FeedApiClient(baseUrl: AppConfig.normalizedBackendBaseUrl),
-      accessToken: widget.session.accessToken,
-    );
+    _composerController = TextEditingController();
+    _controller = widget.controller;
     _scrollPagination = FeedScrollPagination(
       scrollController: _scrollController,
       onLoadMore: () => unawaited(_controller.loadMore()),
     )..attach();
-    unawaited(_controller.bootstrap());
   }
 
   @override
@@ -69,102 +68,47 @@ class _FeedScreenState extends State<FeedScreen> {
     _scrollPagination.detach();
     _scrollController.dispose();
     _composerController.dispose();
-    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (BuildContext context, _) {
-        return Scaffold(
-          backgroundColor: EditorialColors.surface,
-          body: Column(
-            children: <Widget>[
-              SafeArea(
-                bottom: false,
-                child: EditorialCenteredViewport(
-                  maxWidth: 620,
-                  padding: const EdgeInsets.fromLTRB(24, 10, 24, 8),
-                  child: FeedTopBar(
-                    onMenuTap: _showAccountSheet,
-                    onSearchTap: () =>
-                        _showNotice("Search is not connected yet."),
-                  ),
-                ),
+    return Scaffold(
+      backgroundColor: EditorialColors.surface,
+      body: Column(
+        children: <Widget>[
+          SafeArea(
+            bottom: false,
+            child: EditorialCenteredViewport(
+              maxWidth: 620,
+              padding: const EdgeInsets.fromLTRB(24, 10, 24, 8),
+              child: FeedTopBar(
+                onMenuTap: _showAccountSheet,
+                onSearchTap: () => _showNotice("Search is not connected yet."),
               ),
-              Expanded(child: _buildCurrentTab()),
-              EditorialCenteredViewport(
-                maxWidth: 620,
-                padding: EdgeInsets.zero,
-                child: FeedBottomBar(
-                  selectedIndex: _selectedTabIndex,
-                  onSelected: _handleBottomTabSelected,
-                ),
-              ),
-            ],
+            ),
           ),
-        );
-      },
+          Expanded(child: _buildCurrentTab()),
+          EditorialCenteredViewport(
+            maxWidth: 620,
+            padding: EdgeInsets.zero,
+            child: FeedBottomBar(
+              selectedIndex: _selectedTabIndex,
+              onSelected: _handleBottomTabSelected,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   void _showAccountSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: EditorialColors.surfaceLowest,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    unawaited(
+      showFeedAccountSheet(
+        context,
+        session: widget.session,
+        onLogout: widget.onLogout,
       ),
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  widget.session.user.name ?? widget.session.user.email,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: EditorialColors.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  widget.session.user.email,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: EditorialColors.onSurfaceMuted,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      widget.onLogout();
-                    },
-                    icon: const Icon(Icons.logout, size: 18),
-                    label: const Text("Log out"),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: EditorialColors.onSurface,
-                      side: const BorderSide(
-                        color: EditorialColors.outlineVariant,
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 
@@ -177,6 +121,8 @@ class _FeedScreenState extends State<FeedScreen> {
     }
 
     if (_selectedTabIndex == 1 && index != 1) {
+      // Leaving the composer should follow the same draft-preserving flow as
+      // tapping Cancel so users do not lose in-progress writing.
       if (_editingPost != null) {
         _exitComposer(nextTabIndex: index);
       } else {
@@ -237,13 +183,11 @@ class _FeedScreenState extends State<FeedScreen> {
             });
           },
           primaryActionLabel: _editingPost == null ? "SHARE" : "UPDATE",
-          onPrimaryAction: () => _editingPost == null
-              ? _submitComposer()
-              : _submitEditComposer(),
+          onPrimaryAction: () =>
+              _editingPost == null ? _submitComposer() : _submitEditComposer(),
           secondaryActionLabel: "Cancel",
-          onSecondaryAction: () => _editingPost == null
-              ? _handleCreateCancel()
-              : _exitComposer(),
+          onSecondaryAction: () =>
+              _editingPost == null ? _handleCreateCancel() : _exitComposer(),
           onTagTap: () => _showNotice("Tagging is not connected yet."),
           onQuoteTap: () =>
               _showNotice("Quote templates are not connected yet."),
@@ -252,13 +196,20 @@ class _FeedScreenState extends State<FeedScreen> {
         return const _ActivityPlaceholderView();
       case 0:
       default:
-        return FeedView(
-          state: _controller.state,
-          scrollController: _scrollController,
-          onRetry: _controller.refreshFeed,
-          onLoadMore: _controller.loadMore,
-          onReact: _handleReactionSelected,
-          onEdit: _handleEditSelected,
+        // Only the feed tab listens to controller changes so typing inside the
+        // composer no longer rebuilds the full scaffold.
+        return AnimatedBuilder(
+          animation: _controller,
+          builder: (BuildContext context, _) {
+            return FeedView(
+              state: _controller.state,
+              scrollController: _scrollController,
+              onRetry: _controller.refreshFeed,
+              onLoadMore: _controller.loadMore,
+              onReact: _handleReactionSelected,
+              onEdit: _handleEditSelected,
+            );
+          },
         );
     }
   }
@@ -283,6 +234,8 @@ class _FeedScreenState extends State<FeedScreen> {
     });
 
     try {
+      // Publishing a resumed draft updates the existing post instead of
+      // creating a duplicate record with the same content.
       if (_activeDraft == null) {
         await _controller.createPost(
           body: body,
@@ -302,6 +255,7 @@ class _FeedScreenState extends State<FeedScreen> {
         return;
       }
 
+      _cacheLatestDraft(null);
       _resetComposerState(nextTabIndex: 0);
       await _controller.refreshFeed();
       _showNotice("Prayer shared.");
@@ -372,33 +326,57 @@ class _FeedScreenState extends State<FeedScreen> {
       return;
     }
 
+    // A blank or unchanged composer can exit immediately. We only persist
+    // meaningful edits so toggling in and out of the screen stays fast.
     if (!_hasDraftableComposerChanges) {
       _exitComposer(nextTabIndex: nextTabIndex);
       return;
     }
 
     final String body = _composerController.text.trim();
+    final FeedVisibility visibility = _postAnonymously
+        ? FeedVisibility.anonymous
+        : FeedVisibility.public;
+    final FeedDraft? activeDraft = _activeDraft;
 
     setState(() {
       _isSubmittingComposer = true;
     });
 
     try {
-      if (_activeDraft == null) {
-        await _controller.createPost(
+      if (activeDraft == null) {
+        final result = await _controller.createPost(
           body: body,
-          visibility: _postAnonymously
-              ? FeedVisibility.anonymous
-              : FeedVisibility.public,
+          visibility: visibility,
           saveAsDraft: true,
         );
+        _cacheLatestDraft(
+          result.isDraft
+              ? FeedDraft(
+                  id: result.id,
+                  body: body,
+                  visibility: visibility,
+                  updatedAt: result.createdAt,
+                  createdAt: result.createdAt,
+                )
+              : null,
+        );
       } else {
-        await _controller.updatePost(
-          postId: _activeDraft!.id,
+        final result = await _controller.updatePost(
+          postId: activeDraft.id,
           body: body,
-          visibility: _postAnonymously
-              ? FeedVisibility.anonymous
-              : FeedVisibility.public,
+          visibility: visibility,
+        );
+        _cacheLatestDraft(
+          result.status == "DRAFT"
+              ? FeedDraft(
+                  id: result.id,
+                  body: result.body,
+                  visibility: result.visibility,
+                  updatedAt: result.updatedAt,
+                  createdAt: activeDraft.createdAt,
+                )
+              : null,
         );
       }
 
@@ -421,6 +399,9 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Future<void> _prepareCreateComposerEntry() async {
+    // Skip the resume flow if the user is already editing something or has
+    // local text in the composer. That keeps the prompt from interrupting
+    // intentional in-progress work.
     if (_editingPost != null ||
         _activeDraft != null ||
         _isCheckingDraftEntry ||
@@ -431,7 +412,7 @@ class _FeedScreenState extends State<FeedScreen> {
     _isCheckingDraftEntry = true;
 
     try {
-      final FeedDraft? latestDraft = await _controller.fetchLatestDraft();
+      final FeedDraft? latestDraft = await _resolveLatestDraftForComposerEntry();
 
       if (!mounted || _selectedTabIndex != 1 || _editingPost != null) {
         return;
@@ -446,20 +427,23 @@ class _FeedScreenState extends State<FeedScreen> {
         return;
       }
 
-      final _DraftResumeAction? action = await _showDraftResumeDialog();
+      final FeedDraftResumeAction? action = await showFeedDraftResumeDialog(
+        context,
+      );
 
       if (!mounted || _selectedTabIndex != 1 || _editingPost != null) {
         return;
       }
 
-      if (action == _DraftResumeAction.continueWriting) {
+      if (action == FeedDraftResumeAction.continueWriting) {
         _restoreDraft(latestDraft);
         return;
       }
 
-      if (action == _DraftResumeAction.startNew) {
+      if (action == FeedDraftResumeAction.startNew) {
         try {
           await _controller.discardDraft(latestDraft.id);
+          _cacheLatestDraft(null);
         } catch (error) {
           if (mounted) {
             _showNotice(mapFeedErrorMessage(error));
@@ -481,74 +465,13 @@ class _FeedScreenState extends State<FeedScreen> {
     }
   }
 
-  Future<_DraftResumeAction?> _showDraftResumeDialog() {
-    return showDialog<_DraftResumeAction>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: EditorialColors.surfaceLowest,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Text(
-            "Saved draft found",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: EditorialColors.onSurface,
-            ),
-          ),
-          content: const Text(
-            "You already have a prayer draft. Would you like to continue writing it or start a new one?",
-            style: TextStyle(
-              fontSize: 15,
-              height: 1.6,
-              color: EditorialColors.onSurfaceMuted,
-            ),
-          ),
-          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          actions: <Widget>[
-            OutlinedButton(
-              onPressed: () => Navigator.of(
-                context,
-              ).pop(_DraftResumeAction.startNew),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: EditorialColors.onSurfaceMuted,
-                side: const BorderSide(color: EditorialColors.outlineVariant),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-              ),
-              child: const Text("Start New"),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(
-                context,
-              ).pop(_DraftResumeAction.continueWriting),
-              style: FilledButton.styleFrom(
-                backgroundColor: EditorialColors.primary,
-                foregroundColor: EditorialColors.onPrimary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-              ),
-              child: const Text("Continue Writing"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _restoreDraft(FeedDraft draft) {
     _composerController.text = draft.body;
     _composerController.selection = TextSelection.collapsed(
       offset: _composerController.text.length,
     );
 
+    _cacheLatestDraft(draft);
     setState(() {
       _activeDraft = draft;
       _editingPost = null;
@@ -564,6 +487,8 @@ class _FeedScreenState extends State<FeedScreen> {
     final bool visibilityChanged =
         _postAnonymously != _composerBaselineAnonymous;
 
+    // We only auto-save non-empty drafts. That avoids leaving behind empty
+    // records when the user opens the composer and immediately backs out.
     if (!bodyChanged && !visibilityChanged) {
       return false;
     }
@@ -571,8 +496,25 @@ class _FeedScreenState extends State<FeedScreen> {
     return _composerController.text.trim().isNotEmpty;
   }
 
+  Future<FeedDraft?> _resolveLatestDraftForComposerEntry() async {
+    if (_hasResolvedLatestDraft) {
+      return _cachedLatestDraft;
+    }
+
+    // Reuse the latest draft result while the session stays alive so moving
+    // between tabs does not repeatedly hit the draft endpoint.
+    final FeedDraft? latestDraft = await _controller.fetchLatestDraft();
+    _cacheLatestDraft(latestDraft);
+    return latestDraft;
+  }
+
   void _exitComposer({int nextTabIndex = 0}) {
     _resetComposerState(nextTabIndex: nextTabIndex);
+  }
+
+  void _cacheLatestDraft(FeedDraft? draft) {
+    _cachedLatestDraft = draft;
+    _hasResolvedLatestDraft = true;
   }
 
   void _resetComposerState({required int nextTabIndex}) {
@@ -592,12 +534,13 @@ class _FeedScreenState extends State<FeedScreen> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(content: Text(message), duration: duration ?? const Duration(seconds: 4)),
+        SnackBar(
+          content: Text(message),
+          duration: duration ?? const Duration(seconds: 2),
+        ),
       );
   }
 }
-
-enum _DraftResumeAction { continueWriting, startNew }
 
 class _ActivityPlaceholderView extends StatelessWidget {
   const _ActivityPlaceholderView();

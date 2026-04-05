@@ -1,10 +1,10 @@
 import "package:flutter/material.dart";
 
-import "../../feed/feed_display.dart";
 import "../../feed/feed_models.dart";
 import "../../feed/feed_reaction.dart";
 import "../../design/editorial_tokens.dart";
 import "expandable_prayer_body.dart";
+import "feed_display.dart";
 import "feed_reaction_widgets.dart";
 import "feed_styles.dart";
 

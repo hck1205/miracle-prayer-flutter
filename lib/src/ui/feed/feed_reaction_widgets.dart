@@ -96,6 +96,8 @@ class _PrayerReactionButtonState extends State<PrayerReactionButton> {
       return;
     }
 
+    // The tray lives in the root overlay so hover animations and positioning
+    // stay decoupled from the feed list item's rebuild cycle.
     _overlayEntry = OverlayEntry(
       builder: (BuildContext context) {
         return Positioned.fill(
@@ -122,7 +124,13 @@ class _PrayerReactionButtonState extends State<PrayerReactionButton> {
       },
     );
 
-    Overlay.of(context, rootOverlay: true).insert(_overlayEntry!);
+    final OverlayState? overlay = Overlay.maybeOf(context, rootOverlay: true);
+    if (overlay == null) {
+      _overlayEntry = null;
+      return;
+    }
+
+    overlay.insert(_overlayEntry!);
   }
 
   void _removeOverlay() {

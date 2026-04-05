@@ -1,7 +1,7 @@
 import "package:flutter/material.dart";
 
 import "src/design/editorial_theme.dart";
-import "src/ui/auth_page.dart";
+import "src/ui/auth/auth_page.dart";
 
 void main() {
   runApp(const MiraclePrayerApp());

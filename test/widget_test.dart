@@ -3,7 +3,7 @@ import "package:flutter_test/flutter_test.dart";
 import "package:flutter_svg/flutter_svg.dart";
 
 import "package:miracle_prayer_flutter/src/design/editorial_theme.dart";
-import "package:miracle_prayer_flutter/src/ui/login/login_view.dart";
+import "package:miracle_prayer_flutter/src/ui/auth/login_view.dart";
 
 void main() {
   testWidgets("login card renders backend sign-in entry point", (

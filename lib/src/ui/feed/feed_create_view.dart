@@ -40,9 +40,6 @@ class FeedCreateView extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final bool useCompactFooter = MediaQuery.sizeOf(context).width < 640;
-    final int characterCount = bodyController.text.length;
-    final bool canSubmit =
-        !isSubmitting && bodyController.text.trim().isNotEmpty;
 
     return SafeArea(
       top: false,
@@ -129,42 +126,60 @@ class FeedCreateView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    if (useCompactFooter) ...<Widget>[
-                      _CreateMetaRow(
-                        characterCount: characterCount,
-                        onTagTap: onTagTap,
-                        onQuoteTap: onQuoteTap,
-                      ),
-                      const SizedBox(height: 18),
-                      _CreateActionRow(
-                        canSubmit: canSubmit,
-                        isSubmitting: isSubmitting,
-                        primaryActionLabel: primaryActionLabel,
-                        onPrimaryAction: onPrimaryAction,
-                        secondaryActionLabel: secondaryActionLabel,
-                        onSecondaryAction: onSecondaryAction,
-                      ),
-                    ] else
-                      Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: _CreateMetaRow(
-                              characterCount: characterCount,
-                              onTagTap: onTagTap,
-                              onQuoteTap: onQuoteTap,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          _CreateActionRow(
-                            canSubmit: canSubmit,
-                            isSubmitting: isSubmitting,
-                            primaryActionLabel: primaryActionLabel,
-                            onPrimaryAction: onPrimaryAction,
-                            secondaryActionLabel: secondaryActionLabel,
-                            onSecondaryAction: onSecondaryAction,
-                          ),
-                        ],
-                      ),
+                    // Typing only rebuilds the footer state instead of the full
+                    // screen, which keeps the composer responsive on long text.
+                    ValueListenableBuilder<TextEditingValue>(
+                      valueListenable: bodyController,
+                      builder:
+                          (BuildContext context, TextEditingValue value, _) {
+                            final int characterCount = value.text.length;
+                            final bool canSubmit =
+                                !isSubmitting && value.text.trim().isNotEmpty;
+
+                            if (useCompactFooter) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  _CreateMetaRow(
+                                    characterCount: characterCount,
+                                    onTagTap: onTagTap,
+                                    onQuoteTap: onQuoteTap,
+                                  ),
+                                  const SizedBox(height: 18),
+                                  _CreateActionRow(
+                                    canSubmit: canSubmit,
+                                    isSubmitting: isSubmitting,
+                                    primaryActionLabel: primaryActionLabel,
+                                    onPrimaryAction: onPrimaryAction,
+                                    secondaryActionLabel: secondaryActionLabel,
+                                    onSecondaryAction: onSecondaryAction,
+                                  ),
+                                ],
+                              );
+                            }
+
+                            return Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: _CreateMetaRow(
+                                    characterCount: characterCount,
+                                    onTagTap: onTagTap,
+                                    onQuoteTap: onQuoteTap,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                _CreateActionRow(
+                                  canSubmit: canSubmit,
+                                  isSubmitting: isSubmitting,
+                                  primaryActionLabel: primaryActionLabel,
+                                  onPrimaryAction: onPrimaryAction,
+                                  secondaryActionLabel: secondaryActionLabel,
+                                  onSecondaryAction: onSecondaryAction,
+                                ),
+                              ],
+                            );
+                          },
+                    ),
                   ],
                 ),
               ),
@@ -413,10 +428,7 @@ class _CreateActionRow extends StatelessWidget {
           OutlinedButton(
             style: OutlinedButton.styleFrom(
               foregroundColor: EditorialColors.onSurfaceMuted,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               minimumSize: const Size(0, 40),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               side: BorderSide(

@@ -4,7 +4,7 @@ import "package:flutter_svg/flutter_svg.dart";
 
 import "../../design/editorial_components.dart";
 import "../../design/editorial_tokens.dart";
-import "../google_sign_in_button.dart";
+import "google_sign_in_button.dart";
 
 const String _googleLogoSvg = '''
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink">
