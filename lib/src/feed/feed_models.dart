@@ -81,6 +81,8 @@ class FeedPage {
 }
 
 class FeedPost {
+  static const Duration editWindow = Duration(hours: 1);
+
   const FeedPost({
     required this.id,
     required this.body,
@@ -127,6 +129,8 @@ class FeedPost {
 
   bool get isAnonymous => visibility == FeedVisibility.anonymous;
   bool get hasReaction => viewerReaction != null;
+  bool get isWithinEditWindow =>
+      DateTime.now().isBefore(publishedAt.add(editWindow));
 
   FeedPost copyWith({
     String? id,

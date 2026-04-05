@@ -17,6 +17,7 @@ class FeedView extends StatelessWidget {
     required this.onReact,
     required this.onEdit,
     required this.onDelete,
+    required this.onReport,
   });
 
   final FeedState state;
@@ -26,6 +27,7 @@ class FeedView extends StatelessWidget {
   final void Function(FeedPost post, FeedReactionKind reaction) onReact;
   final ValueChanged<FeedPost> onEdit;
   final ValueChanged<FeedPost> onDelete;
+  final ValueChanged<FeedPost> onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -118,6 +120,7 @@ class FeedView extends StatelessWidget {
                                       onReact(post, reaction),
                                   onEdit: () => onEdit(post),
                                   onDelete: () => onDelete(post),
+                                  onReport: () => onReport(post),
                                 ),
                                 if (!isLast)
                                   const Padding(

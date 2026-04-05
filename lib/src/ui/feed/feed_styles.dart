@@ -146,4 +146,13 @@ abstract final class FeedStyles {
     fontFamily: EditorialTypography.displayFontFamily,
     color: EditorialColors.outline,
   );
+
+  static const TextStyle reactionSummaryLabel = TextStyle(
+    fontSize: 11,
+    letterSpacing: 0.4,
+    fontWeight: FontWeight.w500,
+    fontFamily: EditorialTypography.displayFontFamily,
+    fontFamilyFallback: EditorialTypography.sansFallback,
+    color: EditorialColors.onSurfaceMuted,
+  );
 }

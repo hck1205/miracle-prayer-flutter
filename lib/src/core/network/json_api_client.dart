@@ -40,10 +40,17 @@ class JsonApiClient {
     return _decodeJsonMap(response);
   }
 
-  Future<void> postEmpty(String path, {Map<String, String>? headers}) async {
+  Future<void> postEmpty(
+    String path, {
+    Map<String, dynamic>? body,
+    Map<String, String>? headers,
+  }) async {
     final http.Response response = await _httpClient.post(
       _buildUri(path),
-      headers: headers,
+      headers: body == null
+          ? headers
+          : <String, String>{"Content-Type": "application/json", ...?headers},
+      body: body == null ? null : jsonEncode(body),
     );
 
     if (response.statusCode >= 400) {

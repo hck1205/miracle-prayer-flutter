@@ -15,12 +15,14 @@ class PrayerCard extends StatelessWidget {
     required this.onReact,
     required this.onEdit,
     required this.onDelete,
+    required this.onReport,
   });
 
   final FeedPost item;
   final ValueChanged<FeedReactionKind> onReact;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -36,32 +38,36 @@ class PrayerCard extends StatelessWidget {
                 formatFeedPublishedTimeAgo(item.publishedAt),
                 style: FeedStyles.publishedLabel,
               ),
-              if (item.viewerCanEdit) ...<Widget>[
-                const SizedBox(width: 8),
-                _PrayerCardMenuButton(onEdit: onEdit, onDelete: onDelete),
-              ],
+              const SizedBox(width: 8),
+              _PrayerCardMenuButton(
+                isOwnPost: item.viewerCanEdit,
+                onEdit: onEdit,
+                onDelete: onDelete,
+                onReport: onReport,
+              ),
             ],
           ),
           const SizedBox(height: 20),
-          Stack(
-            clipBehavior: Clip.none,
-            children: <Widget>[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(28, 28, 28, 48),
-                decoration: FeedStyles.prayerBodyDecoration(),
-                child: ExpandablePrayerBody(
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(28, 28, 28, 18),
+            decoration: FeedStyles.prayerBodyDecoration(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                ExpandablePrayerBody(
                   body: item.body,
                   style: FeedStyles.prayerBody(),
                 ),
-              ),
-              if (item.reactionSummary.hasAny)
-                Positioned(
-                  right: 4,
-                  bottom: -12,
-                  child: ReactionCountRow(summary: item.reactionSummary),
-                ),
-            ],
+                if (item.reactionSummary.hasAny) ...<Widget>[
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: ReactionCountRow(summary: item.reactionSummary),
+                  ),
+                ],
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           PrayerReactionButton(
@@ -76,10 +82,17 @@ class PrayerCard extends StatelessWidget {
 }
 
 class _PrayerCardMenuButton extends StatelessWidget {
-  const _PrayerCardMenuButton({required this.onEdit, required this.onDelete});
+  const _PrayerCardMenuButton({
+    required this.isOwnPost,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onReport,
+  });
 
+  final bool isOwnPost;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onReport;
 
   static Color _softenMenuTextColor(Color color) {
     return color.withValues(alpha: 0.86);
@@ -125,49 +138,76 @@ class _PrayerCardMenuButton extends StatelessWidget {
         if (value == "delete") {
           onDelete();
         }
+
+        if (value == "report") {
+          onReport();
+        }
       },
-      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-        PopupMenuItem<String>(
-          value: "edit",
-          height: 40,
-          padding: const EdgeInsets.all(10),
-          labelTextStyle: _menuLabelTextStyle(
-            _softenMenuTextColor(EditorialColors.onSurface),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const <Widget>[
-              Icon(
-                Icons.edit_outlined,
-                size: 16,
-                color: EditorialColors.onSurface,
+      itemBuilder: (BuildContext context) => isOwnPost
+          ? <PopupMenuEntry<String>>[
+              PopupMenuItem<String>(
+                value: "edit",
+                height: 40,
+                padding: const EdgeInsets.all(10),
+                labelTextStyle: _menuLabelTextStyle(
+                  _softenMenuTextColor(EditorialColors.onSurface),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const <Widget>[
+                    Icon(
+                      Icons.edit_outlined,
+                      size: 16,
+                      color: EditorialColors.onSurface,
+                    ),
+                    SizedBox(width: 10),
+                    Text("Edit"),
+                  ],
+                ),
               ),
-              SizedBox(width: 10),
-              Text("Edit"),
-            ],
-          ),
-        ),
-        PopupMenuItem<String>(
-          value: "delete",
-          height: 40,
-          padding: const EdgeInsets.all(10),
-          labelTextStyle: _menuLabelTextStyle(
-            _softenMenuTextColor(EditorialColors.primary),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const <Widget>[
-              Icon(
-                Icons.delete_outline,
-                size: 16,
-                color: EditorialColors.primary,
+              PopupMenuItem<String>(
+                value: "delete",
+                height: 40,
+                padding: const EdgeInsets.all(10),
+                labelTextStyle: _menuLabelTextStyle(
+                  _softenMenuTextColor(EditorialColors.primary),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const <Widget>[
+                    Icon(
+                      Icons.delete_outline,
+                      size: 16,
+                      color: EditorialColors.primary,
+                    ),
+                    SizedBox(width: 10),
+                    Text("Delete"),
+                  ],
+                ),
               ),
-              SizedBox(width: 10),
-              Text("Delete"),
+            ]
+          : <PopupMenuEntry<String>>[
+              PopupMenuItem<String>(
+                value: "report",
+                height: 40,
+                padding: const EdgeInsets.all(10),
+                labelTextStyle: _menuLabelTextStyle(
+                  _softenMenuTextColor(EditorialColors.error),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const <Widget>[
+                    Icon(
+                      Icons.flag_outlined,
+                      size: 16,
+                      color: EditorialColors.error,
+                    ),
+                    SizedBox(width: 10),
+                    Text("Report"),
+                  ],
+                ),
+              ),
             ],
-          ),
-        ),
-      ],
       padding: EdgeInsets.zero,
       child: Container(
         width: 28,

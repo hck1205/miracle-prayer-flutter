@@ -3,17 +3,22 @@ import "dart:async";
 import "package:flutter/material.dart";
 
 import "../../auth/auth_models.dart";
+import "../../core/network/api_exception.dart";
 import "../../design/editorial_components.dart";
 import "../../design/editorial_tokens.dart";
 import "../../feed/feed_controller.dart";
 import "../../feed/feed_error_message.dart";
 import "../../feed/feed_models.dart";
+import "../../feed/feed_report.dart";
 import "../../feed/feed_reaction.dart";
 import "feed_account_sheet.dart";
 import "feed_bottom_bar.dart";
 import "feed_create_view.dart";
+import "feed_edit_expired_dialog.dart";
 import "feed_delete_confirm_dialog.dart";
 import "feed_draft_resume_dialog.dart";
+import "feed_reported_notice_dialog.dart";
+import "feed_report_dialog.dart";
 import "feed_scroll_pagination.dart";
 import "feed_top_bar.dart";
 import "feed_view.dart";
@@ -154,6 +159,11 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   void _handleEditSelected(FeedPost post) {
+    if (!post.isWithinEditWindow) {
+      unawaited(showFeedEditExpiredDialog(context));
+      return;
+    }
+
     _composerController.text = post.body;
     _composerController.selection = TextSelection.collapsed(
       offset: _composerController.text.length,
@@ -183,6 +193,37 @@ class _FeedScreenState extends State<FeedScreen> {
       }
 
       _showNotice("Prayer deleted.");
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      if (error is ApiException &&
+          error.message == "You already reported this prayer.") {
+        await showFeedReportedNoticeDialog(context);
+        return;
+      }
+
+      _showNotice(mapFeedErrorMessage(error));
+    }
+  }
+
+  Future<void> _handleReportSelected(FeedPost post) async {
+    final FeedReportSubmission? submission = await showFeedReportDialog(
+      context,
+    );
+    if (submission == null || !mounted) {
+      return;
+    }
+
+    try {
+      await _controller.reportPost(post.id, submission);
+
+      if (!mounted) {
+        return;
+      }
+
+      _showNotice("Report submitted. Thank you.");
     } catch (error) {
       if (!mounted) {
         return;
@@ -234,6 +275,8 @@ class _FeedScreenState extends State<FeedScreen> {
               onEdit: _handleEditSelected,
               onDelete: (FeedPost post) =>
                   unawaited(_handleDeleteSelected(post)),
+              onReport: (FeedPost post) =>
+                  unawaited(_handleReportSelected(post)),
             );
           },
         );

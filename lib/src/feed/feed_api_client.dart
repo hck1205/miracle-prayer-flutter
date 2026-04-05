@@ -2,6 +2,7 @@ import "package:http/http.dart" as http;
 
 import "../core/network/json_api_client.dart";
 import "feed_models.dart";
+import "feed_report.dart";
 import "feed_reaction.dart";
 
 class FeedApiClient {
@@ -125,6 +126,22 @@ class FeedApiClient {
     return _jsonApiClient.deleteEmpty(
       "/v1/feed/$postId",
       headers: _jsonApiClient.bearerHeaders(accessToken),
+    );
+  }
+
+  Future<void> reportPost(
+    String accessToken, {
+    required String postId,
+    required FeedReportSubmission submission,
+  }) {
+    return _jsonApiClient.postEmpty(
+      "/v1/feed/$postId/report",
+      headers: _jsonApiClient.bearerHeaders(accessToken),
+      body: <String, dynamic>{
+        "reason": submission.reason.apiValue,
+        if (submission.details != null && submission.details!.trim().isNotEmpty)
+          "details": submission.details!.trim(),
+      },
     );
   }
 

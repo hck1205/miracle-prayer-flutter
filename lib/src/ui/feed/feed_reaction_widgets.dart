@@ -159,10 +159,7 @@ class ReactionCountRow extends StatelessWidget {
       ),
     ].where((entry) => entry.count > 0).toList(growable: false);
 
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: _ReactionCountSummary(entries: entries, totalCount: summary.total),
-    );
+    return _ReactionCountSummary(entries: entries, totalCount: summary.total);
   }
 }
 
@@ -328,29 +325,16 @@ class _ReactionCountSummary extends StatelessWidget {
         .take(4)
         .toList(growable: false);
 
-    return Container(
-      height: 36,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: FeedStyles.reactionSummaryDecoration(),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          for (
-            int index = 0;
-            index < visibleEntries.length;
-            index++
-          ) ...<Widget>[
-            _ReactionListGlyph(data: visibleEntries[index]),
-            if (index < visibleEntries.length - 1) const SizedBox(width: 6),
-          ],
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: FeedStyles.reactionCountBadgeDecoration(),
-            child: Text("$totalCount", style: FeedStyles.reactionCountValue),
-          ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        for (int index = 0; index < visibleEntries.length; index++) ...<Widget>[
+          _ReactionListGlyph(data: visibleEntries[index]),
+          if (index < visibleEntries.length - 1) const SizedBox(width: 4),
         ],
-      ),
+        const SizedBox(width: 8),
+        Text("$totalCount", style: FeedStyles.reactionSummaryLabel),
+      ],
     );
   }
 }
@@ -368,8 +352,8 @@ class _ReactionListGlyph extends StatelessWidget {
       child: Center(
         child: ReactionGlyph(
           option: data.option,
-          size: 13,
-          color: EditorialColors.outline,
+          size: 12,
+          color: EditorialColors.onSurfaceMuted,
         ),
       ),
     );

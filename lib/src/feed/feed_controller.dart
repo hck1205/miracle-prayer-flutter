@@ -3,6 +3,7 @@ import "package:flutter/foundation.dart";
 import "feed_api_client.dart";
 import "feed_error_message.dart";
 import "feed_models.dart";
+import "feed_report.dart";
 import "feed_reaction.dart";
 import "feed_state.dart";
 
@@ -198,6 +199,14 @@ class FeedController extends ChangeNotifier {
         .where((FeedPost item) => item.id != postId)
         .toList(growable: false);
     _updateState(_state.copyWith(items: nextItems, clearError: true));
+  }
+
+  Future<void> reportPost(String postId, FeedReportSubmission submission) {
+    return _feedApiClient.reportPost(
+      _accessToken,
+      postId: postId,
+      submission: submission,
+    );
   }
 
   void _updateState(FeedState nextState) {
