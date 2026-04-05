@@ -7,6 +7,8 @@ import "feed_reaction.dart";
 import "feed_state.dart";
 
 class FeedController extends ChangeNotifier {
+  static const int _pageSize = 10;
+
   FeedController({
     required FeedApiClient feedApiClient,
     required String accessToken,
@@ -36,17 +38,82 @@ class FeedController extends ChangeNotifier {
       return;
     }
 
-    _updateState(_state.copyWith(isLoading: true, clearError: true));
+    _updateState(
+      _state.copyWith(
+        isLoading: true,
+        isLoadingMore: false,
+        hasMore: true,
+        clearError: true,
+        clearNextCursor: true,
+      ),
+    );
 
     try {
-      final items = await _feedApiClient.fetchFeed(_accessToken);
+      final FeedPage page = await _feedApiClient.fetchFeed(
+        _accessToken,
+        limit: _pageSize,
+      );
       _updateState(
-        _state.copyWith(items: items, isLoading: false, clearError: true),
+        _state.copyWith(
+          items: page.items,
+          isLoading: false,
+          isLoadingMore: false,
+          hasMore: page.hasMore,
+          nextCursor: page.nextCursor,
+          clearError: true,
+        ),
       );
     } catch (error) {
       _updateState(
         _state.copyWith(
           isLoading: false,
+          errorMessage: mapFeedErrorMessage(error),
+        ),
+      );
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (_state.isLoading || _state.isLoadingMore || !_state.hasMore) {
+      return;
+    }
+
+    final String? cursor = _state.nextCursor;
+    if (cursor == null || cursor.isEmpty) {
+      _updateState(_state.copyWith(hasMore: false));
+      return;
+    }
+
+    _updateState(_state.copyWith(isLoadingMore: true, clearError: true));
+
+    try {
+      final FeedPage page = await _feedApiClient.fetchFeed(
+        _accessToken,
+        limit: _pageSize,
+        cursor: cursor,
+      );
+
+      final Set<String> existingIds = _state.items
+          .map((FeedPost item) => item.id)
+          .toSet();
+      final List<FeedPost> mergedItems = <FeedPost>[
+        ..._state.items,
+        ...page.items.where((FeedPost item) => !existingIds.contains(item.id)),
+      ];
+
+      _updateState(
+        _state.copyWith(
+          items: mergedItems,
+          isLoadingMore: false,
+          hasMore: page.hasMore,
+          nextCursor: page.nextCursor,
+          clearError: true,
+        ),
+      );
+    } catch (error) {
+      _updateState(
+        _state.copyWith(
+          isLoadingMore: false,
           errorMessage: mapFeedErrorMessage(error),
         ),
       );

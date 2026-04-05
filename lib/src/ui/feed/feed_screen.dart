@@ -4,11 +4,14 @@ import "package:flutter/material.dart";
 
 import "../../app_config.dart";
 import "../../auth/auth_models.dart";
+import "../../design/editorial_components.dart";
 import "../../design/editorial_tokens.dart";
 import "../../feed/feed_api_client.dart";
 import "../../feed/feed_controller.dart";
 import "../../feed/feed_models.dart";
 import "../../feed/feed_reaction.dart";
+import "feed_scroll_pagination.dart";
+import "feed_top_bar.dart";
 import "feed_view.dart";
 
 class FeedScreen extends StatefulWidget {
@@ -23,20 +26,29 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   late final FeedController _controller;
+  late final ScrollController _scrollController;
+  late final FeedScrollPagination _scrollPagination;
   int _selectedTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     _controller = FeedController(
       feedApiClient: FeedApiClient(baseUrl: AppConfig.normalizedBackendBaseUrl),
       accessToken: widget.session.accessToken,
     );
+    _scrollPagination = FeedScrollPagination(
+      scrollController: _scrollController,
+      onLoadMore: () => unawaited(_controller.loadMore()),
+    )..attach();
     unawaited(_controller.bootstrap());
   }
 
   @override
   void dispose() {
+    _scrollPagination.detach();
+    _scrollController.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -48,39 +60,32 @@ class _FeedScreenState extends State<FeedScreen> {
       builder: (BuildContext context, _) {
         return Scaffold(
           backgroundColor: EditorialColors.surface,
-          appBar: AppBar(
-            backgroundColor: EditorialColors.surface.withValues(alpha: 0.94),
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            surfaceTintColor: Colors.transparent,
-            leading: IconButton(
-              icon: const Icon(Icons.menu, size: 20),
-              color: EditorialColors.primary,
-              onPressed: _showAccountSheet,
-            ),
-            centerTitle: true,
-            title: const Text(
-              "Prayers",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: EditorialColors.onSurface,
+          body: Column(
+            children: <Widget>[
+              SafeArea(
+                bottom: false,
+                child: EditorialCenteredViewport(
+                  maxWidth: 620,
+                  padding: const EdgeInsets.fromLTRB(24, 10, 24, 8),
+                  child: FeedTopBar(
+                    onMenuTap: _showAccountSheet,
+                    onSearchTap: () =>
+                        _showNotice("Search is not connected yet."),
+                  ),
+                ),
               ),
-            ),
-            actions: <Widget>[
-              IconButton(
-                icon: const Icon(Icons.search, size: 20),
-                color: EditorialColors.primary,
-                onPressed: () => _showNotice("Search is not connected yet."),
+              Expanded(
+                child: FeedView(
+                  state: _controller.state,
+                  scrollController: _scrollController,
+                  selectedTabIndex: _selectedTabIndex,
+                  onSelectedTab: _handleBottomTabSelected,
+                  onRetry: _controller.refreshFeed,
+                  onLoadMore: _controller.loadMore,
+                  onReact: _handleReactionSelected,
+                ),
               ),
             ],
-          ),
-          body: FeedView(
-            state: _controller.state,
-            selectedTabIndex: _selectedTabIndex,
-            onSelectedTab: _handleBottomTabSelected,
-            onRetry: _controller.refreshFeed,
-            onReact: _handleReactionSelected,
           ),
         );
       },

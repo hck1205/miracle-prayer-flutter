@@ -29,14 +29,13 @@ class LoginView extends StatelessWidget {
 
         return SingleChildScrollView(
           padding: const EdgeInsets.symmetric(
-            horizontal: EditorialSpacing.mobileGutter,
             vertical: EditorialSpacing.mobileGutter,
           ),
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: minHeight),
             child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
+              child: EditorialCenteredViewport(
+                maxWidth: 460,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,

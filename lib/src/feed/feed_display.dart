@@ -12,20 +12,20 @@ String formatFeedPublishedTimeAgo(
   final DateTime localPublishedAt = publishedAt.toLocal();
 
   if (difference.inMinutes < 1) {
-    return "방금 전";
+    return "\uBC29\uAE08 \uC804";
   }
 
   if (difference.inHours < 1) {
-    return "${difference.inMinutes}분 전";
+    return "${difference.inMinutes}\uBD84 \uC804";
   }
 
   if (difference.inDays < 1) {
-    return "${difference.inHours}시간 전";
+    return "${difference.inHours}\uC2DC\uAC04 \uC804";
   }
 
   if (difference.inDays == 1) {
-    return "어제";
+    return "\uC5B4\uC81C";
   }
 
-  return "${localPublishedAt.month}월 ${localPublishedAt.day}일";
+  return "${localPublishedAt.month}\uC6D4 ${localPublishedAt.day}\uC77C";
 }

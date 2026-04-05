@@ -1,5 +1,3 @@
-import "dart:convert";
-
 import "feed_reaction.dart";
 
 enum FeedVisibility { public, anonymous }
@@ -70,6 +68,18 @@ class FeedReactionSummary {
   }
 }
 
+class FeedPage {
+  const FeedPage({
+    required this.items,
+    required this.nextCursor,
+    required this.hasMore,
+  });
+
+  final List<FeedPost> items;
+  final String? nextCursor;
+  final bool hasMore;
+}
+
 class FeedPost {
   const FeedPost({
     required this.id,
@@ -87,7 +97,7 @@ class FeedPost {
   factory FeedPost.fromJson(Map<String, dynamic> json) {
     return FeedPost(
       id: json["id"] as String,
-      body: _decodeBody(json),
+      body: json["body"] as String? ?? "",
       visibility: _parseVisibility(json["visibility"] as String?),
       authorLabel: json["authorLabel"] as String? ?? "UNKNOWN",
       authorType: _parseAuthorType(json["authorType"] as String?),
@@ -167,31 +177,5 @@ class FeedPost {
       "PEACE" => FeedReactionKind.peace,
       _ => null,
     };
-  }
-
-  static String _decodeBody(Map<String, dynamic> json) {
-    final List<dynamic>? bodyCodePoints = json["bodyCodePoints"] as List<dynamic>?;
-
-    if (bodyCodePoints != null && bodyCodePoints.isNotEmpty) {
-      try {
-        return String.fromCharCodes(
-          bodyCodePoints.whereType<num>().map((value) => value.toInt()),
-        );
-      } catch (_) {
-        // Fall back to the encoded string variants below.
-      }
-    }
-
-    final String? bodyBase64 = json["bodyBase64"] as String?;
-
-    if (bodyBase64 != null && bodyBase64.isNotEmpty) {
-      try {
-        return utf8.decode(base64Decode(bodyBase64));
-      } catch (_) {
-        // Fall back to the plain JSON body if decoding fails.
-      }
-    }
-
-    return json["body"] as String? ?? "";
   }
 }

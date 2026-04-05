@@ -11,16 +11,20 @@ class FeedView extends StatelessWidget {
   const FeedView({
     super.key,
     required this.state,
+    required this.scrollController,
     required this.selectedTabIndex,
     required this.onSelectedTab,
     required this.onRetry,
+    required this.onLoadMore,
     required this.onReact,
   });
 
   final FeedState state;
+  final ScrollController scrollController;
   final int selectedTabIndex;
   final ValueChanged<int> onSelectedTab;
   final VoidCallback onRetry;
+  final VoidCallback onLoadMore;
   final void Function(FeedPost post, FeedReactionKind reaction) onReact;
 
   @override
@@ -30,61 +34,155 @@ class FeedView extends StatelessWidget {
         Expanded(
           child: SafeArea(
             top: false,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 120),
-              children: <Widget>[
-                const FeedHeader(),
-                const SizedBox(height: 32),
+            child: CustomScrollView(
+              controller: scrollController,
+              cacheExtent: 1200,
+              slivers: <Widget>[
+                const SliverToBoxAdapter(
+                  child: EditorialCenteredViewport(
+                    maxWidth: 620,
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 28),
+                      child: FeedHeader(),
+                    ),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 32)),
                 if (state.isLoading && !state.hasItems)
-                  const _FeedLoadingState()
+                  const SliverToBoxAdapter(
+                    child: EditorialCenteredViewport(
+                      maxWidth: 620,
+                      child: _FeedLoadingState(),
+                    ),
+                  )
                 else if (state.errorMessage != null && !state.hasItems)
-                  _FeedErrorState(
-                    message: state.errorMessage!,
-                    onRetry: onRetry,
+                  SliverToBoxAdapter(
+                    child: EditorialCenteredViewport(
+                      maxWidth: 620,
+                      child: _FeedErrorState(
+                        message: state.errorMessage!,
+                        onRetry: onRetry,
+                      ),
+                    ),
                   )
                 else if (!state.hasItems)
-                  const _FeedEmptyState()
-                else
-                  ..._buildFeedItems(state.items),
-                const SizedBox(height: 20),
-                const FeedFooter(),
+                  const SliverToBoxAdapter(
+                    child: EditorialCenteredViewport(
+                      maxWidth: 620,
+                      child: _FeedEmptyState(),
+                    ),
+                  )
+                else ...<Widget>[
+                  if (state.isLoading)
+                    const SliverToBoxAdapter(
+                      child: EditorialCenteredViewport(
+                        maxWidth: 620,
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: 24),
+                          child: Center(
+                            child: EditorialInlineLoader(width: 96, height: 2),
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (state.errorMessage != null)
+                    SliverToBoxAdapter(
+                      child: EditorialCenteredViewport(
+                        maxWidth: 620,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 24),
+                          child: EditorialStatusMessage(
+                            message: state.errorMessage!,
+                            color: EditorialColors.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (BuildContext context, int index) {
+                        final FeedPost post = state.items[index];
+                        final bool isLast = index == state.items.length - 1;
+
+                        return EditorialCenteredViewport(
+                          maxWidth: 620,
+                          child: Padding(
+                            padding: EdgeInsets.only(bottom: isLast ? 0 : 28),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: <Widget>[
+                                PrayerCard(
+                                  key: ValueKey<String>(post.id),
+                                  item: post,
+                                  onReact: (FeedReactionKind reaction) =>
+                                      onReact(post, reaction),
+                                ),
+                                if (!isLast)
+                                  const Padding(
+                                    padding: EdgeInsets.only(top: 28),
+                                    child: Center(child: EditorialDivider()),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      childCount: state.items.length,
+                      addAutomaticKeepAlives: false,
+                      addRepaintBoundaries: true,
+                    ),
+                  ),
+                ],
+                if (state.isLoadingMore)
+                  const SliverToBoxAdapter(
+                    child: EditorialCenteredViewport(
+                      maxWidth: 620,
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 24),
+                        child: Center(
+                          child: EditorialInlineLoader(width: 84, height: 2),
+                        ),
+                      ),
+                    ),
+                  )
+                else if (state.hasItems && state.hasMore)
+                  SliverToBoxAdapter(
+                    child: EditorialCenteredViewport(
+                      maxWidth: 620,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: TextButton(
+                            onPressed: onLoadMore,
+                            child: const Text("Load more"),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                const SliverToBoxAdapter(
+                  child: EditorialCenteredViewport(
+                    maxWidth: 620,
+                    child: FeedFooter(),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 120)),
               ],
             ),
           ),
         ),
-        FeedBottomBar(
-          selectedIndex: selectedTabIndex,
-          onSelected: onSelectedTab,
+        EditorialCenteredViewport(
+          maxWidth: 620,
+          padding: EdgeInsets.zero,
+          child: FeedBottomBar(
+            selectedIndex: selectedTabIndex,
+            onSelected: onSelectedTab,
+          ),
         ),
       ],
     );
-  }
-
-  List<Widget> _buildFeedItems(List<FeedPost> items) {
-    return <Widget>[
-      if (state.isLoading) ...<Widget>[
-        const Center(child: EditorialInlineLoader(width: 96, height: 2)),
-        const SizedBox(height: 24),
-      ],
-      if (state.errorMessage != null) ...<Widget>[
-        EditorialStatusMessage(
-          message: state.errorMessage!,
-          color: EditorialColors.primary,
-        ),
-        const SizedBox(height: 24),
-      ],
-      for (int index = 0; index < items.length; index++) ...<Widget>[
-        PrayerCard(
-          item: items[index],
-          onReact: (FeedReactionKind reaction) => onReact(items[index], reaction),
-        ),
-        if (index < items.length - 1)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 28),
-            child: Center(child: EditorialDivider()),
-          ),
-      ],
-    ];
   }
 }
 

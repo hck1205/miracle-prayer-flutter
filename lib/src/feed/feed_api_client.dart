@@ -14,21 +14,31 @@ class FeedApiClient {
   final String baseUrl;
   final JsonApiClient _jsonApiClient;
 
-  Future<List<FeedPost>> fetchFeed(
+  Future<FeedPage> fetchFeed(
     String accessToken, {
-    int limit = 30,
+    int limit = 10,
+    String? cursor,
   }) async {
+    final StringBuffer path = StringBuffer("/v1/feed?limit=$limit");
+    if (cursor != null && cursor.isNotEmpty) {
+      path.write("&cursor=${Uri.encodeQueryComponent(cursor)}");
+    }
+
     final Map<String, dynamic> json = await _jsonApiClient.getJson(
-      "/v1/feed?limit=$limit",
+      path.toString(),
       headers: _jsonApiClient.bearerHeaders(accessToken),
     );
 
     final List<dynamic> items = json["items"] as List<dynamic>? ?? <dynamic>[];
 
-    return items
-        .whereType<Map<String, dynamic>>()
-        .map(FeedPost.fromJson)
-        .toList(growable: false);
+    return FeedPage(
+      items: items
+          .whereType<Map<String, dynamic>>()
+          .map(FeedPost.fromJson)
+          .toList(growable: false),
+      nextCursor: json["nextCursor"] as String?,
+      hasMore: json["hasMore"] as bool? ?? false,
+    );
   }
 
   Future<FeedPostReactionResult> reactToPost(
