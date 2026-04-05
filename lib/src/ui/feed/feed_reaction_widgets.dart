@@ -270,7 +270,7 @@ class _ReactionTrayItemState extends State<_ReactionTrayItem> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 170),
           curve: Curves.easeOut,
-          transform: Matrix4.identity()..translate(0.0, elevated ? -4.0 : 0.0),
+          transform: Matrix4.translationValues(0.0, elevated ? -4.0 : 0.0, 0.0),
           padding: elevated ? _activeItemPadding : _defaultItemPadding,
           decoration: BoxDecoration(
             color: elevated ? EditorialColors.surfaceLow : Colors.transparent,

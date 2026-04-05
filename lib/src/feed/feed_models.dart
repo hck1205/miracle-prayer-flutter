@@ -85,6 +85,7 @@ class FeedPost {
     required this.id,
     required this.body,
     required this.visibility,
+    required this.viewerCanEdit,
     required this.authorLabel,
     required this.authorType,
     required this.reactionCount,
@@ -99,6 +100,7 @@ class FeedPost {
       id: json["id"] as String,
       body: json["body"] as String? ?? "",
       visibility: _parseVisibility(json["visibility"] as String?),
+      viewerCanEdit: json["viewerCanEdit"] as bool? ?? false,
       authorLabel: json["authorLabel"] as String? ?? "UNKNOWN",
       authorType: _parseAuthorType(json["authorType"] as String?),
       reactionCount: json["reactionCount"] as int? ?? 0,
@@ -114,6 +116,7 @@ class FeedPost {
   final String id;
   final String body;
   final FeedVisibility visibility;
+  final bool viewerCanEdit;
   final String authorLabel;
   final FeedAuthorType authorType;
   final int reactionCount;
@@ -123,13 +126,13 @@ class FeedPost {
   final DateTime publishedAt;
 
   bool get isAnonymous => visibility == FeedVisibility.anonymous;
-  bool get isAiAuthored => authorType == FeedAuthorType.ai;
   bool get hasReaction => viewerReaction != null;
 
   FeedPost copyWith({
     String? id,
     String? body,
     FeedVisibility? visibility,
+    bool? viewerCanEdit,
     String? authorLabel,
     FeedAuthorType? authorType,
     int? reactionCount,
@@ -143,6 +146,7 @@ class FeedPost {
       id: id ?? this.id,
       body: body ?? this.body,
       visibility: visibility ?? this.visibility,
+      viewerCanEdit: viewerCanEdit ?? this.viewerCanEdit,
       authorLabel: authorLabel ?? this.authorLabel,
       authorType: authorType ?? this.authorType,
       reactionCount: reactionCount ?? this.reactionCount,
@@ -178,4 +182,35 @@ class FeedPost {
       _ => null,
     };
   }
+}
+
+class FeedDraft {
+  const FeedDraft({
+    required this.id,
+    required this.body,
+    required this.visibility,
+    required this.updatedAt,
+    required this.createdAt,
+  });
+
+  factory FeedDraft.fromJson(Map<String, dynamic> json) {
+    return FeedDraft(
+      id: json["id"] as String,
+      body: json["body"] as String? ?? "",
+      visibility: switch (json["visibility"] as String?) {
+        "ANONYMOUS" => FeedVisibility.anonymous,
+        _ => FeedVisibility.public,
+      },
+      updatedAt: DateTime.parse(json["updatedAt"] as String),
+      createdAt: DateTime.parse(json["createdAt"] as String),
+    );
+  }
+
+  final String id;
+  final String body;
+  final FeedVisibility visibility;
+  final DateTime updatedAt;
+  final DateTime createdAt;
+
+  bool get isAnonymous => visibility == FeedVisibility.anonymous;
 }

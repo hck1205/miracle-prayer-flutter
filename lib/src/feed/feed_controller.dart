@@ -143,14 +143,46 @@ class FeedController extends ChangeNotifier {
           })
           .toList(growable: false);
 
-      _updateState(
-        _state.copyWith(items: nextItems, clearError: true),
-      );
+      _updateState(_state.copyWith(items: nextItems, clearError: true));
     } catch (error) {
-      _updateState(
-        _state.copyWith(errorMessage: mapFeedErrorMessage(error)),
-      );
+      _updateState(_state.copyWith(errorMessage: mapFeedErrorMessage(error)));
     }
+  }
+
+  Future<FeedCreatePostResult> createPost({
+    required String body,
+    required FeedVisibility visibility,
+    required bool saveAsDraft,
+  }) {
+    return _feedApiClient.createPost(
+      _accessToken,
+      body: body,
+      visibility: visibility,
+      saveAsDraft: saveAsDraft,
+    );
+  }
+
+  Future<FeedDraft?> fetchLatestDraft() {
+    return _feedApiClient.fetchLatestDraft(_accessToken);
+  }
+
+  Future<FeedUpdatePostResult> updatePost({
+    required String postId,
+    required String body,
+    required FeedVisibility visibility,
+    bool publish = false,
+  }) {
+    return _feedApiClient.updatePost(
+      _accessToken,
+      postId: postId,
+      body: body,
+      visibility: visibility,
+      publish: publish,
+    );
+  }
+
+  Future<void> discardDraft(String postId) {
+    return _feedApiClient.discardDraft(_accessToken, postId: postId);
   }
 
   void _updateState(FeedState nextState) {

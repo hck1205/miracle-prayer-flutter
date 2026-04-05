@@ -6,10 +6,7 @@ import "feed_reaction.dart";
 
 class FeedApiClient {
   FeedApiClient({required this.baseUrl, http.Client? httpClient})
-    : _jsonApiClient = JsonApiClient(
-        baseUrl: baseUrl,
-        httpClient: httpClient,
-      );
+    : _jsonApiClient = JsonApiClient(baseUrl: baseUrl, httpClient: httpClient);
 
   final String baseUrl;
   final JsonApiClient _jsonApiClient;
@@ -49,12 +46,78 @@ class FeedApiClient {
     final Map<String, dynamic> json = await _jsonApiClient.postJson(
       "/v1/feed/$postId/reactions",
       headers: _jsonApiClient.bearerHeaders(accessToken),
-      body: <String, dynamic>{
-        "type": _reactionTypeValue(reaction),
-      },
+      body: <String, dynamic>{"type": _reactionTypeValue(reaction)},
     );
 
     return FeedPostReactionResult.fromJson(json);
+  }
+
+  Future<FeedCreatePostResult> createPost(
+    String accessToken, {
+    required String body,
+    required FeedVisibility visibility,
+    required bool saveAsDraft,
+  }) async {
+    final Map<String, dynamic> json = await _jsonApiClient.postJson(
+      "/v1/feed",
+      headers: _jsonApiClient.bearerHeaders(accessToken),
+      body: <String, dynamic>{
+        "body": body,
+        "visibility": switch (visibility) {
+          FeedVisibility.anonymous => "ANONYMOUS",
+          FeedVisibility.public => "PUBLIC",
+        },
+        "status": saveAsDraft ? "DRAFT" : "PUBLISHED",
+      },
+    );
+
+    return FeedCreatePostResult.fromJson(json);
+  }
+
+  Future<FeedDraft?> fetchLatestDraft(String accessToken) async {
+    final Map<String, dynamic> json = await _jsonApiClient.getJson(
+      "/v1/feed/drafts/latest",
+      headers: _jsonApiClient.bearerHeaders(accessToken),
+    );
+
+    final Map<String, dynamic>? draftJson = json["draft"] as Map<String, dynamic>?;
+    if (draftJson == null) {
+      return null;
+    }
+
+    return FeedDraft.fromJson(draftJson);
+  }
+
+  Future<FeedUpdatePostResult> updatePost(
+    String accessToken, {
+    required String postId,
+    required String body,
+    required FeedVisibility visibility,
+    bool publish = false,
+  }) async {
+    final Map<String, dynamic> requestBody = <String, dynamic>{
+      "body": body,
+      "visibility": switch (visibility) {
+        FeedVisibility.anonymous => "ANONYMOUS",
+        FeedVisibility.public => "PUBLIC",
+      },
+      if (publish) "status": "PUBLISHED",
+    };
+
+    final Map<String, dynamic> json = await _jsonApiClient.postJson(
+      "/v1/feed/$postId",
+      headers: _jsonApiClient.bearerHeaders(accessToken),
+      body: requestBody,
+    );
+
+    return FeedUpdatePostResult.fromJson(json);
+  }
+
+  Future<void> discardDraft(String accessToken, {required String postId}) {
+    return _jsonApiClient.postEmpty(
+      "/v1/feed/$postId/discard",
+      headers: _jsonApiClient.bearerHeaders(accessToken),
+    );
   }
 
   String _reactionTypeValue(FeedReactionKind reaction) {
@@ -65,6 +128,33 @@ class FeedApiClient {
       FeedReactionKind.peace => "PEACE",
     };
   }
+}
+
+class FeedCreatePostResult {
+  const FeedCreatePostResult({
+    required this.id,
+    required this.status,
+    required this.createdAt,
+    required this.publishedAt,
+  });
+
+  factory FeedCreatePostResult.fromJson(Map<String, dynamic> json) {
+    return FeedCreatePostResult(
+      id: json["id"] as String,
+      status: json["status"] as String? ?? "PUBLISHED",
+      createdAt: DateTime.parse(json["createdAt"] as String),
+      publishedAt: json["publishedAt"] == null
+          ? null
+          : DateTime.parse(json["publishedAt"] as String),
+    );
+  }
+
+  final String id;
+  final String status;
+  final DateTime createdAt;
+  final DateTime? publishedAt;
+
+  bool get isDraft => status == "DRAFT";
 }
 
 class FeedPostReactionResult {
@@ -100,4 +190,38 @@ class FeedPostReactionResult {
       _ => null,
     };
   }
+}
+
+class FeedUpdatePostResult {
+  const FeedUpdatePostResult({
+    required this.id,
+    required this.body,
+    required this.visibility,
+    required this.status,
+    required this.updatedAt,
+    required this.publishedAt,
+  });
+
+  factory FeedUpdatePostResult.fromJson(Map<String, dynamic> json) {
+    return FeedUpdatePostResult(
+      id: json["id"] as String,
+      body: json["body"] as String? ?? "",
+      visibility: switch (json["visibility"] as String?) {
+        "ANONYMOUS" => FeedVisibility.anonymous,
+        _ => FeedVisibility.public,
+      },
+      status: json["status"] as String? ?? "PUBLISHED",
+      updatedAt: DateTime.parse(json["updatedAt"] as String),
+      publishedAt: json["publishedAt"] == null
+          ? null
+          : DateTime.parse(json["publishedAt"] as String),
+    );
+  }
+
+  final String id;
+  final String body;
+  final FeedVisibility visibility;
+  final String status;
+  final DateTime updatedAt;
+  final DateTime? publishedAt;
 }

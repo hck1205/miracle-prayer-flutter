@@ -1,13 +1,10 @@
 import "feed_models.dart";
 
 String formatFeedAuthorLabel(FeedPost post) {
-  return "ANONYMOUS";
+  return post.isAnonymous ? "ANONYMOUS" : post.authorLabel;
 }
 
-String formatFeedPublishedTimeAgo(
-  DateTime publishedAt, {
-  DateTime? now,
-}) {
+String formatFeedPublishedTimeAgo(DateTime publishedAt, {DateTime? now}) {
   final Duration difference = (now ?? DateTime.now()).difference(publishedAt);
   final DateTime localPublishedAt = publishedAt.toLocal();
 

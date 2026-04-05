@@ -41,27 +41,24 @@ abstract final class FeedStyles {
     color: EditorialColors.outline,
   );
 
-  static TextStyle prayerBody({required bool lined}) {
+  static TextStyle prayerBody() {
     return EditorialTypography.withKoreanContent(
       TextStyle(
         fontSize: 19,
         height: 1.8,
         fontWeight: FontWeight.w300,
-        fontStyle: lined ? FontStyle.normal : FontStyle.italic,
+        fontStyle: FontStyle.normal,
         color: EditorialColors.onSurface,
       ),
     );
   }
 
-  static BoxDecoration prayerBodyDecoration({required bool lined}) {
-    return BoxDecoration(
-      color: lined ? EditorialColors.surfaceLowest : EditorialColors.surfaceLow,
-      border: lined
-          ? const Border(
-              left: BorderSide(color: EditorialColors.outlineVariant, width: 2),
-            )
-          : null,
-      borderRadius: lined ? null : BorderRadius.circular(12),
+  static BoxDecoration prayerBodyDecoration() {
+    return const BoxDecoration(
+      color: EditorialColors.surfaceLowest,
+      border: Border(
+        left: BorderSide(color: EditorialColors.outlineVariant, width: 2),
+      ),
     );
   }
 

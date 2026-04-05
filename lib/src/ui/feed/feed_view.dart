@@ -12,20 +12,18 @@ class FeedView extends StatelessWidget {
     super.key,
     required this.state,
     required this.scrollController,
-    required this.selectedTabIndex,
-    required this.onSelectedTab,
     required this.onRetry,
     required this.onLoadMore,
     required this.onReact,
+    required this.onEdit,
   });
 
   final FeedState state;
   final ScrollController scrollController;
-  final int selectedTabIndex;
-  final ValueChanged<int> onSelectedTab;
   final VoidCallback onRetry;
   final VoidCallback onLoadMore;
   final void Function(FeedPost post, FeedReactionKind reaction) onReact;
+  final ValueChanged<FeedPost> onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -116,6 +114,7 @@ class FeedView extends StatelessWidget {
                                   item: post,
                                   onReact: (FeedReactionKind reaction) =>
                                       onReact(post, reaction),
+                                  onEdit: () => onEdit(post),
                                 ),
                                 if (!isLast)
                                   const Padding(
@@ -168,17 +167,9 @@ class FeedView extends StatelessWidget {
                     child: FeedFooter(),
                   ),
                 ),
-                const SliverToBoxAdapter(child: SizedBox(height: 120)),
+                const SliverToBoxAdapter(child: SizedBox(height: 40)),
               ],
             ),
-          ),
-        ),
-        EditorialCenteredViewport(
-          maxWidth: 620,
-          padding: EdgeInsets.zero,
-          child: FeedBottomBar(
-            selectedIndex: selectedTabIndex,
-            onSelected: onSelectedTab,
           ),
         ),
       ],
