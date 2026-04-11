@@ -18,6 +18,7 @@ import "feed_detail_screen.dart";
 import "feed_edit_expired_dialog.dart";
 import "feed_delete_confirm_dialog.dart";
 import "feed_draft_resume_dialog.dart";
+import "feed_post_lookup.dart";
 import "feed_reported_notice_dialog.dart";
 import "feed_report_dialog.dart";
 import "feed_scroll_pagination.dart";
@@ -303,7 +304,7 @@ class _FeedScreenState extends State<FeedScreen> {
             },
             onToggleFavorite: (String postId) async {
               final FeedPost currentPost =
-                  _findPostById(postId) ?? post;
+                  findFeedPostById(_controller, postId) ?? post;
               return _handleFavoriteToggled(currentPost);
             },
             onEdit: _handleEditSelected,
@@ -313,22 +314,6 @@ class _FeedScreenState extends State<FeedScreen> {
         },
       ),
     );
-  }
-
-  FeedPost? _findPostById(String postId) {
-    for (final FeedPost item in _controller.state.items) {
-      if (item.id == postId) {
-        return item;
-      }
-    }
-
-    for (final FeedPost item in _controller.favoritesState.items) {
-      if (item.id == postId) {
-        return item;
-      }
-    }
-
-    return null;
   }
 
   Widget _buildCurrentTab() {

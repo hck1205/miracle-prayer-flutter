@@ -5,10 +5,10 @@ import "../../design/editorial_tokens.dart";
 import "../../feed/feed_controller.dart";
 import "../../feed/feed_models.dart";
 import "../../feed/feed_reaction.dart";
-import "feed_display.dart";
+import "feed_post_lookup.dart";
+import "feed_post_meta.dart";
 import "feed_reaction_widgets.dart";
 import "feed_styles.dart";
-import "prayer_card.dart";
 
 class FeedDetailScreen extends StatefulWidget {
   const FeedDetailScreen({
@@ -70,7 +70,10 @@ class _FeedDetailScreenState extends State<FeedDetailScreen> {
                 children: <Widget>[
                   IconButton(
                     onPressed: () => Navigator.of(context).maybePop(),
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 18,
+                    ),
                     color: EditorialColors.onSurface,
                     splashRadius: 20,
                   ),
@@ -89,48 +92,20 @@ class _FeedDetailScreenState extends State<FeedDetailScreen> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(0, 12, 0, 28),
                 child: EditorialCenteredViewport(
-                    maxWidth: 620,
+                  maxWidth: 620,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       const EditorialDivider(),
                       const SizedBox(height: 24),
-                      Row(
-                        children: <Widget>[
-                          Text(
-                            formatFeedAuthorLabel(post),
-                            style: FeedStyles.authorLabel,
-                          ),
-                          if (post.isUrgent) ...<Widget>[
-                            const SizedBox(width: 10),
-                            UrgentBadge(),
-                          ],
-                          const Spacer(),
-                          Text(
-                            formatFeedPublishedTimeAgo(post.publishedAt),
-                            style: FeedStyles.publishedLabel,
-                          ),
-                          if (!post.viewerCanEdit || post.isFavorited) ...<Widget>[
-                            const SizedBox(width: 8),
-                            IgnorePointer(
-                              ignoring: _isProcessingFavorite,
-                              child: PrayerCardFavoriteButton(
-                                isFavorited: post.isFavorited,
-                                onTap: _handleToggleFavorite,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(width: 8),
-                          IgnorePointer(
-                            ignoring: _isProcessingDelete,
-                            child: PrayerCardMenuButton(
-                              isOwnPost: post.viewerCanEdit,
-                              onEdit: _handleEdit,
-                              onDelete: _handleDelete,
-                              onReport: _handleReport,
-                            ),
-                          ),
-                        ],
+                      FeedPostMetaRow(
+                        post: post,
+                        onToggleFavorite: _handleToggleFavorite,
+                        onEdit: _handleEdit,
+                        onDelete: _handleDelete,
+                        onReport: _handleReport,
+                        isFavoriteEnabled: !_isProcessingFavorite,
+                        isMenuEnabled: !_isProcessingDelete,
                       ),
                       const SizedBox(height: 20),
                       ClipRRect(
@@ -226,7 +201,10 @@ class _FeedDetailScreenState extends State<FeedDetailScreen> {
   }
 
   void _syncFromController() {
-    final FeedPost? nextPost = _findPostById(_currentPost.id);
+    final FeedPost? nextPost = findFeedPostById(
+      widget.controller,
+      _currentPost.id,
+    );
     if (nextPost == null || !mounted) {
       return;
     }
@@ -234,22 +212,6 @@ class _FeedDetailScreenState extends State<FeedDetailScreen> {
     setState(() {
       _currentPost = nextPost;
     });
-  }
-
-  FeedPost? _findPostById(String postId) {
-    for (final FeedPost item in widget.controller.state.items) {
-      if (item.id == postId) {
-        return item;
-      }
-    }
-
-    for (final FeedPost item in widget.controller.favoritesState.items) {
-      if (item.id == postId) {
-        return item;
-      }
-    }
-
-    return null;
   }
 
   Future<void> _handleReactionSelected(FeedReactionKind reaction) async {
@@ -282,9 +244,7 @@ class _FeedDetailScreenState extends State<FeedDetailScreen> {
       }
 
       setState(() {
-        _currentPost = _currentPost.copyWith(
-          viewerHasFavorited: isFavorited,
-        );
+        _currentPost = _currentPost.copyWith(viewerHasFavorited: isFavorited);
       });
       _syncFromController();
     } finally {
