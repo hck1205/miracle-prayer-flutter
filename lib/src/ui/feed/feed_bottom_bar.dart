@@ -50,7 +50,8 @@ class FeedBottomBar extends StatelessWidget {
               onTap: () => onSelected(1),
             ),
             BottomNavItem(
-              icon: Icons.favorite_border,
+              icon: Icons.bookmark_border_rounded,
+              selectedIcon: Icons.bookmark_rounded,
               selected: selectedIndex == 2,
               onTap: () => onSelected(2),
             ),
@@ -65,11 +66,13 @@ class BottomNavItem extends StatelessWidget {
   const BottomNavItem({
     super.key,
     required this.icon,
+    this.selectedIcon,
     required this.onTap,
     this.selected = false,
   });
 
   final IconData icon;
+  final IconData? selectedIcon;
   final VoidCallback onTap;
   final bool selected;
 
@@ -89,7 +92,7 @@ class BottomNavItem extends StatelessWidget {
           ),
           padding: const EdgeInsets.all(12),
           child: Icon(
-            icon,
+            selected ? (selectedIcon ?? icon) : icon,
             size: 20,
             color: selected
                 ? EditorialColors.onSurface

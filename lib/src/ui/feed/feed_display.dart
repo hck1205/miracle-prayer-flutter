@@ -1,7 +1,8 @@
 import "../../feed/feed_models.dart";
 
 String formatFeedAuthorLabel(FeedPost post) {
-  return post.isAnonymous ? "ANONYMOUS" : post.authorLabel;
+  final String feedNumber = post.postNumber > 0 ? "#${post.postNumber}" : "#--";
+  return "$feedNumber ANONYMOUS";
 }
 
 String formatFeedPublishedTimeAgo(DateTime publishedAt, {DateTime? now}) {

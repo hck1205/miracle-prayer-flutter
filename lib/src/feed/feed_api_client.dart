@@ -17,13 +17,51 @@ class FeedApiClient {
     int limit = 10,
     String? cursor,
   }) async {
-    final StringBuffer path = StringBuffer("/v1/feed?limit=$limit");
+    return _fetchCollection(
+      accessToken,
+      path: "/v1/feed",
+      limit: limit,
+      cursor: cursor,
+    );
+  }
+
+  Future<FeedPage> fetchFavorites(
+    String accessToken, {
+    int limit = 10,
+    String? cursor,
+  }) async {
+    return _fetchCollection(
+      accessToken,
+      path: "/v1/feed/favorites",
+      limit: limit,
+      cursor: cursor,
+    );
+  }
+
+  Future<FeedPage> fetchUrgentFeed(
+    String accessToken, {
+    int limit = 5,
+  }) async {
+    return _fetchCollection(
+      accessToken,
+      path: "/v1/feed/urgent",
+      limit: limit,
+    );
+  }
+
+  Future<FeedPage> _fetchCollection(
+    String accessToken, {
+    required String path,
+    required int limit,
+    String? cursor,
+  }) async {
+    final StringBuffer requestPath = StringBuffer("$path?limit=$limit");
     if (cursor != null && cursor.isNotEmpty) {
-      path.write("&cursor=${Uri.encodeQueryComponent(cursor)}");
+      requestPath.write("&cursor=${Uri.encodeQueryComponent(cursor)}");
     }
 
     final Map<String, dynamic> json = await _jsonApiClient.getJson(
-      path.toString(),
+      requestPath.toString(),
       headers: _jsonApiClient.bearerHeaders(accessToken),
     );
 
@@ -53,10 +91,24 @@ class FeedApiClient {
     return FeedPostReactionResult.fromJson(json);
   }
 
+  Future<FeedPostFavoriteResult> toggleFavorite(
+    String accessToken, {
+    required String postId,
+  }) async {
+    final Map<String, dynamic> json = await _jsonApiClient.postJson(
+      "/v1/feed/$postId/favorite",
+      headers: _jsonApiClient.bearerHeaders(accessToken),
+      body: const <String, dynamic>{},
+    );
+
+    return FeedPostFavoriteResult.fromJson(json);
+  }
+
   Future<FeedCreatePostResult> createPost(
     String accessToken, {
     required String body,
     required FeedVisibility visibility,
+    required FeedPostType? type,
     required bool saveAsDraft,
   }) async {
     final Map<String, dynamic> json = await _jsonApiClient.postJson(
@@ -68,6 +120,7 @@ class FeedApiClient {
           FeedVisibility.anonymous => "ANONYMOUS",
           FeedVisibility.public => "PUBLIC",
         },
+        "type": _postTypeValue(type),
         "status": saveAsDraft ? "DRAFT" : "PUBLISHED",
       },
     );
@@ -90,11 +143,29 @@ class FeedApiClient {
     return FeedDraft.fromJson(draftJson);
   }
 
+  Future<FeedUrgentEligibility> fetchUrgentEligibility(
+    String accessToken, {
+    String? excludePostId,
+  }) async {
+    final StringBuffer path = StringBuffer("/v1/feed/urgent-eligibility");
+    if (excludePostId != null && excludePostId.isNotEmpty) {
+      path.write("?excludePostId=${Uri.encodeQueryComponent(excludePostId)}");
+    }
+
+    final Map<String, dynamic> json = await _jsonApiClient.getJson(
+      path.toString(),
+      headers: _jsonApiClient.bearerHeaders(accessToken),
+    );
+
+    return FeedUrgentEligibility.fromJson(json);
+  }
+
   Future<FeedUpdatePostResult> updatePost(
     String accessToken, {
     required String postId,
     required String body,
     required FeedVisibility visibility,
+    required FeedPostType? type,
     bool publish = false,
   }) async {
     final Map<String, dynamic> requestBody = <String, dynamic>{
@@ -103,6 +174,7 @@ class FeedApiClient {
         FeedVisibility.anonymous => "ANONYMOUS",
         FeedVisibility.public => "PUBLIC",
       },
+      "type": _postTypeValue(type),
       if (publish) "status": "PUBLISHED",
     };
 
@@ -153,11 +225,19 @@ class FeedApiClient {
       FeedReactionKind.peace => "PEACE",
     };
   }
+
+  String? _postTypeValue(FeedPostType? type) {
+    return switch (type) {
+      FeedPostType.urgent => "URGENT",
+      null => null,
+    };
+  }
 }
 
 class FeedCreatePostResult {
   const FeedCreatePostResult({
     required this.id,
+    required this.type,
     required this.status,
     required this.createdAt,
     required this.publishedAt,
@@ -166,6 +246,7 @@ class FeedCreatePostResult {
   factory FeedCreatePostResult.fromJson(Map<String, dynamic> json) {
     return FeedCreatePostResult(
       id: json["id"] as String,
+      type: _parseType(json["type"] as String?),
       status: json["status"] as String? ?? "PUBLISHED",
       createdAt: DateTime.parse(json["createdAt"] as String),
       publishedAt: json["publishedAt"] == null
@@ -175,11 +256,19 @@ class FeedCreatePostResult {
   }
 
   final String id;
+  final FeedPostType? type;
   final String status;
   final DateTime createdAt;
   final DateTime? publishedAt;
 
   bool get isDraft => status == "DRAFT";
+
+  static FeedPostType? _parseType(String? value) {
+    return switch (value) {
+      "URGENT" => FeedPostType.urgent,
+      _ => null,
+    };
+  }
 }
 
 class FeedPostReactionResult {
@@ -217,11 +306,29 @@ class FeedPostReactionResult {
   }
 }
 
+class FeedPostFavoriteResult {
+  const FeedPostFavoriteResult({
+    required this.postId,
+    required this.viewerHasFavorited,
+  });
+
+  factory FeedPostFavoriteResult.fromJson(Map<String, dynamic> json) {
+    return FeedPostFavoriteResult(
+      postId: json["postId"] as String,
+      viewerHasFavorited: json["viewerHasFavorited"] as bool? ?? false,
+    );
+  }
+
+  final String postId;
+  final bool viewerHasFavorited;
+}
+
 class FeedUpdatePostResult {
   const FeedUpdatePostResult({
     required this.id,
     required this.body,
     required this.visibility,
+    required this.type,
     required this.status,
     required this.updatedAt,
     required this.publishedAt,
@@ -235,6 +342,10 @@ class FeedUpdatePostResult {
         "ANONYMOUS" => FeedVisibility.anonymous,
         _ => FeedVisibility.public,
       },
+      type: switch (json["type"] as String?) {
+        "URGENT" => FeedPostType.urgent,
+        _ => null,
+      },
       status: json["status"] as String? ?? "PUBLISHED",
       updatedAt: DateTime.parse(json["updatedAt"] as String),
       publishedAt: json["publishedAt"] == null
@@ -246,6 +357,7 @@ class FeedUpdatePostResult {
   final String id;
   final String body;
   final FeedVisibility visibility;
+  final FeedPostType? type;
   final String status;
   final DateTime updatedAt;
   final DateTime? publishedAt;

@@ -11,8 +11,13 @@ class FeedCreateView extends StatelessWidget {
     required this.identityLabel,
     required this.bodyController,
     required this.isAnonymous,
+    required this.isUrgent,
+    required this.isUrgentEnabled,
+    required this.isUrgentLoading,
+    required this.urgentHelperText,
     required this.isSubmitting,
     required this.onAnonymousChanged,
+    required this.onUrgentChanged,
     required this.primaryActionLabel,
     required this.onPrimaryAction,
     required this.secondaryActionLabel,
@@ -27,8 +32,13 @@ class FeedCreateView extends StatelessWidget {
   final String identityLabel;
   final TextEditingController bodyController;
   final bool isAnonymous;
+  final bool isUrgent;
+  final bool isUrgentEnabled;
+  final bool isUrgentLoading;
+  final String urgentHelperText;
   final bool isSubmitting;
   final ValueChanged<bool> onAnonymousChanged;
+  final ValueChanged<bool> onUrgentChanged;
   final String primaryActionLabel;
   final VoidCallback onPrimaryAction;
   final String secondaryActionLabel;
@@ -67,26 +77,39 @@ class FeedCreateView extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const EditorialDivider(),
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Expanded(
+                    child: _IdentitySummary(identityLabel: identityLabel),
+                  ),
+                  const SizedBox(width: 12),
+                  _InlineToggleOption(
+                    label: "POST ANONYMOUSLY",
+                    value: isAnonymous,
+                    enabled: !isSubmitting,
+                    activeTrackColor: EditorialColors.primary,
+                    onChanged: onAnonymousChanged,
+                    scale: 0.72,
+                    alignEnd: true,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
               EditorialSheet(
                 tone: EditorialSheetTone.subtle,
                 padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Expanded(
-                          child: _IdentitySummary(identityLabel: identityLabel),
-                        ),
-                        const SizedBox(width: 16),
-                        _AnonymousToggle(
-                          value: isAnonymous,
-                          enabled: !isSubmitting,
-                          onChanged: onAnonymousChanged,
-                        ),
-                      ],
+                    _ComposerVisibilityOptions(
+                      isUrgent: isUrgent,
+                      isUrgentEnabled: isUrgentEnabled,
+                      isUrgentLoading: isUrgentLoading,
+                      urgentHelperText: urgentHelperText,
+                      enabled: !isSubmitting,
+                      onUrgentChanged: onUrgentChanged,
                     ),
                     const SizedBox(height: 28),
                     ConstrainedBox(
@@ -232,6 +255,7 @@ class _IdentitySummary extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
 
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Container(
           width: 44,
@@ -289,45 +313,118 @@ class _IdentitySummary extends StatelessWidget {
   }
 }
 
-class _AnonymousToggle extends StatelessWidget {
-  const _AnonymousToggle({
-    required this.value,
+class _ComposerVisibilityOptions extends StatelessWidget {
+  const _ComposerVisibilityOptions({
+    required this.isUrgent,
+    required this.isUrgentEnabled,
+    required this.isUrgentLoading,
+    required this.urgentHelperText,
     required this.enabled,
-    required this.onChanged,
+    required this.onUrgentChanged,
   });
 
+  final bool isUrgent;
+  final bool isUrgentEnabled;
+  final bool isUrgentLoading;
+  final String urgentHelperText;
+  final bool enabled;
+  final ValueChanged<bool> onUrgentChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        _InlineToggleOption(
+          label: "MARK AS URGENT",
+          value: isUrgent,
+          enabled: enabled && isUrgentEnabled,
+          isLoading: isUrgentLoading,
+          activeTrackColor: EditorialColors.error,
+          onChanged: onUrgentChanged,
+          scale: 0.72,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          urgentHelperText,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            fontSize: 11,
+            height: 1.45,
+            color: isUrgent
+                ? EditorialColors.error
+                : EditorialColors.onSurfaceMuted,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InlineToggleOption extends StatelessWidget {
+  const _InlineToggleOption({
+    required this.label,
+    required this.value,
+    required this.enabled,
+    required this.activeTrackColor,
+    required this.onChanged,
+    this.isLoading = false,
+    this.scale = 0.82,
+    this.alignEnd = false,
+  });
+
+  final String label;
   final bool value;
   final bool enabled;
+  final Color activeTrackColor;
+  final bool isLoading;
+  final double scale;
+  final bool alignEnd;
   final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final bool showSpinner = isLoading && !value;
 
     return Opacity(
-      opacity: enabled ? 1 : 0.6,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      opacity: enabled || value ? 1 : 0.6,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text(
-            "POST ANONYMOUSLY",
-            style: theme.textTheme.labelMedium?.copyWith(
-              fontSize: 11,
-              letterSpacing: 1.6,
-              color: EditorialColors.onSurfaceMuted,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: alignEnd ? TextAlign.right : TextAlign.left,
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontSize: 10,
+                letterSpacing: 1.2,
+                color: EditorialColors.onSurfaceMuted,
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          Switch(
-            value: value,
-            onChanged: enabled ? onChanged : null,
-            activeThumbColor: EditorialColors.surfaceLowest,
-            activeTrackColor: EditorialColors.primary,
-            inactiveThumbColor: EditorialColors.surfaceLowest,
-            inactiveTrackColor: EditorialColors.outlineVariant.withValues(
-              alpha: 0.45,
+          if (showSpinner) ...<Widget>[
+            const SizedBox(
+              width: 10,
+              height: 10,
+              child: CircularProgressIndicator(strokeWidth: 1.4),
             ),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            const SizedBox(width: 6),
+          ],
+          Transform.scale(
+            scale: scale,
+            child: Switch(
+              value: value,
+              onChanged: enabled || value ? onChanged : null,
+              activeThumbColor: EditorialColors.surfaceLowest,
+              activeTrackColor: activeTrackColor,
+              inactiveThumbColor: EditorialColors.surfaceLowest,
+              inactiveTrackColor: EditorialColors.outlineVariant.withValues(
+                alpha: 0.45,
+              ),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
           ),
         ],
       ),

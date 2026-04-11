@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 
+import "feed_body_preview.dart";
 import "feed_styles.dart";
 
 class ExpandablePrayerBody extends StatefulWidget {
@@ -39,23 +40,29 @@ class _ExpandablePrayerBodyState extends State<ExpandablePrayerBody> {
 
   @override
   Widget build(BuildContext context) {
+    final String collapsedPreview = normalizeFeedPreviewBody(widget.body);
+
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         final bool hasOverflow = _resolveHasOverflow(
+          body: collapsedPreview,
           maxWidth: constraints.maxWidth,
           textDirection: Directionality.of(context),
           textScaler: MediaQuery.textScalerOf(context),
         );
 
         if (_isExpanded || !hasOverflow) {
-          return Text(widget.body, style: widget.style);
+          return Text(
+            _isExpanded ? widget.body : collapsedPreview,
+            style: widget.style,
+          );
         }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
-              widget.body,
+              collapsedPreview,
               maxLines: _collapsedMaxLines,
               overflow: TextOverflow.ellipsis,
               style: widget.style,
@@ -84,6 +91,7 @@ class _ExpandablePrayerBodyState extends State<ExpandablePrayerBody> {
   }
 
   bool _resolveHasOverflow({
+    required String body,
     required double maxWidth,
     required TextDirection textDirection,
     required TextScaler textScaler,
@@ -97,7 +105,7 @@ class _ExpandablePrayerBodyState extends State<ExpandablePrayerBody> {
     }
 
     final TextPainter painter = TextPainter(
-      text: TextSpan(text: widget.body, style: widget.style),
+      text: TextSpan(text: body, style: widget.style),
       maxLines: _collapsedMaxLines,
       textDirection: textDirection,
       textScaler: textScaler,

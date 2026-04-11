@@ -4,6 +4,8 @@ enum FeedVisibility { public, anonymous }
 
 enum FeedAuthorType { human, ai }
 
+enum FeedPostType { urgent }
+
 class FeedReactionSummary {
   const FeedReactionSummary({
     required this.love,
@@ -85,9 +87,12 @@ class FeedPost {
 
   const FeedPost({
     required this.id,
+    required this.postNumber,
     required this.body,
     required this.visibility,
+    required this.type,
     required this.viewerCanEdit,
+    required this.viewerHasFavorited,
     required this.authorLabel,
     required this.authorType,
     required this.reactionCount,
@@ -100,9 +105,12 @@ class FeedPost {
   factory FeedPost.fromJson(Map<String, dynamic> json) {
     return FeedPost(
       id: json["id"] as String,
+      postNumber: json["postNumber"] as int? ?? 0,
       body: json["body"] as String? ?? "",
       visibility: _parseVisibility(json["visibility"] as String?),
+      type: _parseType(json["type"] as String?),
       viewerCanEdit: json["viewerCanEdit"] as bool? ?? false,
+      viewerHasFavorited: json["viewerHasFavorited"] as bool? ?? false,
       authorLabel: json["authorLabel"] as String? ?? "UNKNOWN",
       authorType: _parseAuthorType(json["authorType"] as String?),
       reactionCount: json["reactionCount"] as int? ?? 0,
@@ -116,9 +124,12 @@ class FeedPost {
   }
 
   final String id;
+  final int postNumber;
   final String body;
   final FeedVisibility visibility;
+  final FeedPostType? type;
   final bool viewerCanEdit;
+  final bool viewerHasFavorited;
   final String authorLabel;
   final FeedAuthorType authorType;
   final int reactionCount;
@@ -128,15 +139,21 @@ class FeedPost {
   final DateTime publishedAt;
 
   bool get isAnonymous => visibility == FeedVisibility.anonymous;
+  bool get isUrgent => type == FeedPostType.urgent;
   bool get hasReaction => viewerReaction != null;
+  bool get isFavorited => viewerHasFavorited;
   bool get isWithinEditWindow =>
       DateTime.now().isBefore(publishedAt.add(editWindow));
 
   FeedPost copyWith({
     String? id,
+    int? postNumber,
     String? body,
     FeedVisibility? visibility,
+    FeedPostType? type,
+    bool clearType = false,
     bool? viewerCanEdit,
+    bool? viewerHasFavorited,
     String? authorLabel,
     FeedAuthorType? authorType,
     int? reactionCount,
@@ -148,9 +165,12 @@ class FeedPost {
   }) {
     return FeedPost(
       id: id ?? this.id,
+      postNumber: postNumber ?? this.postNumber,
       body: body ?? this.body,
       visibility: visibility ?? this.visibility,
+      type: clearType ? null : (type ?? this.type),
       viewerCanEdit: viewerCanEdit ?? this.viewerCanEdit,
+      viewerHasFavorited: viewerHasFavorited ?? this.viewerHasFavorited,
       authorLabel: authorLabel ?? this.authorLabel,
       authorType: authorType ?? this.authorType,
       reactionCount: reactionCount ?? this.reactionCount,
@@ -177,6 +197,13 @@ class FeedPost {
     };
   }
 
+  static FeedPostType? _parseType(String? value) {
+    return switch (value) {
+      "URGENT" => FeedPostType.urgent,
+      _ => null,
+    };
+  }
+
   static FeedReactionKind? _parseViewerReaction(String? value) {
     return switch (value) {
       "LOVE" => FeedReactionKind.love,
@@ -193,6 +220,7 @@ class FeedDraft {
     required this.id,
     required this.body,
     required this.visibility,
+    required this.type,
     required this.updatedAt,
     required this.createdAt,
   });
@@ -205,6 +233,10 @@ class FeedDraft {
         "ANONYMOUS" => FeedVisibility.anonymous,
         _ => FeedVisibility.public,
       },
+      type: switch (json["type"] as String?) {
+        "URGENT" => FeedPostType.urgent,
+        _ => null,
+      },
       updatedAt: DateTime.parse(json["updatedAt"] as String),
       createdAt: DateTime.parse(json["createdAt"] as String),
     );
@@ -213,8 +245,32 @@ class FeedDraft {
   final String id;
   final String body;
   final FeedVisibility visibility;
+  final FeedPostType? type;
   final DateTime updatedAt;
   final DateTime createdAt;
 
   bool get isAnonymous => visibility == FeedVisibility.anonymous;
+  bool get isUrgent => type == FeedPostType.urgent;
+}
+
+class FeedUrgentEligibility {
+  const FeedUrgentEligibility({
+    required this.canUseUrgent,
+    required this.cooldownSeconds,
+    required this.nextAvailableAt,
+  });
+
+  factory FeedUrgentEligibility.fromJson(Map<String, dynamic> json) {
+    return FeedUrgentEligibility(
+      canUseUrgent: json["canUseUrgent"] as bool? ?? false,
+      cooldownSeconds: json["cooldownSeconds"] as int? ?? 0,
+      nextAvailableAt: json["nextAvailableAt"] == null
+          ? null
+          : DateTime.parse(json["nextAvailableAt"] as String),
+    );
+  }
+
+  final bool canUseUrgent;
+  final int cooldownSeconds;
+  final DateTime? nextAvailableAt;
 }

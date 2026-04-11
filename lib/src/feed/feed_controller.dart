@@ -9,6 +9,7 @@ import "feed_state.dart";
 
 class FeedController extends ChangeNotifier {
   static const int _pageSize = 10;
+  static const int _urgentPageSize = 5;
 
   FeedController({
     required FeedApiClient feedApiClient,
@@ -20,10 +21,15 @@ class FeedController extends ChangeNotifier {
   final String _accessToken;
 
   FeedState _state = const FeedState.initial();
+  FeedState _favoritesState = const FeedState.initial();
+  FeedState _urgentState = const FeedState.initial();
   bool _didBootstrap = false;
+  bool _didBootstrapFavorites = false;
   bool _isDisposed = false;
 
   FeedState get state => _state;
+  FeedState get favoritesState => _favoritesState;
+  FeedState get urgentState => _urgentState;
 
   Future<void> bootstrap() async {
     if (_didBootstrap) {
@@ -41,8 +47,91 @@ class FeedController extends ChangeNotifier {
       return;
     }
 
-    _updateState(
-      _state.copyWith(
+    _updateBothStates(
+      feedState: _state.copyWith(
+        isLoading: true,
+        isLoadingMore: false,
+        hasMore: true,
+        clearError: true,
+        clearNextCursor: true,
+      ),
+      urgentState: _urgentState.copyWith(
+        isLoading: true,
+        isLoadingMore: false,
+        hasMore: false,
+        clearError: true,
+        clearNextCursor: true,
+      ),
+    );
+
+    FeedPage? feedPage;
+    String? feedErrorMessage;
+    FeedPage? urgentPage;
+    String? urgentErrorMessage;
+
+    try {
+      feedPage = await _feedApiClient.fetchFeed(
+        _accessToken,
+        limit: _pageSize,
+      );
+    } catch (error) {
+      feedErrorMessage = mapFeedErrorMessage(error);
+    }
+
+    try {
+      urgentPage = await _feedApiClient.fetchUrgentFeed(
+        _accessToken,
+        limit: _urgentPageSize,
+      );
+    } catch (error) {
+      urgentErrorMessage = mapFeedErrorMessage(error);
+    }
+
+    _updateBothStates(
+      feedState: feedPage == null
+          ? _state.copyWith(isLoading: false, errorMessage: feedErrorMessage)
+          : _state.copyWith(
+              items: feedPage.items,
+              isLoading: false,
+              isLoadingMore: false,
+              hasMore: feedPage.hasMore,
+              nextCursor: feedPage.nextCursor,
+              clearError: true,
+            ),
+      urgentState: urgentPage == null
+          ? _urgentState.copyWith(
+              isLoading: false,
+              isLoadingMore: false,
+              hasMore: false,
+              errorMessage: urgentErrorMessage,
+            )
+          : _urgentState.copyWith(
+              items: urgentPage.items,
+              isLoading: false,
+              isLoadingMore: false,
+              hasMore: false,
+              clearNextCursor: true,
+              clearError: true,
+            ),
+    );
+  }
+
+  Future<void> bootstrapFavorites() async {
+    if (_didBootstrapFavorites) {
+      return;
+    }
+
+    _didBootstrapFavorites = true;
+    await refreshFavorites();
+  }
+
+  Future<void> refreshFavorites() async {
+    if (_favoritesState.isLoading) {
+      return;
+    }
+
+    _updateFavoritesState(
+      _favoritesState.copyWith(
         isLoading: true,
         isLoadingMore: false,
         hasMore: true,
@@ -52,12 +141,12 @@ class FeedController extends ChangeNotifier {
     );
 
     try {
-      final FeedPage page = await _feedApiClient.fetchFeed(
+      final FeedPage page = await _feedApiClient.fetchFavorites(
         _accessToken,
         limit: _pageSize,
       );
-      _updateState(
-        _state.copyWith(
+      _updateFavoritesState(
+        _favoritesState.copyWith(
           items: page.items,
           isLoading: false,
           isLoadingMore: false,
@@ -67,8 +156,8 @@ class FeedController extends ChangeNotifier {
         ),
       );
     } catch (error) {
-      _updateState(
-        _state.copyWith(
+      _updateFavoritesState(
+        _favoritesState.copyWith(
           isLoading: false,
           errorMessage: mapFeedErrorMessage(error),
         ),
@@ -125,6 +214,54 @@ class FeedController extends ChangeNotifier {
     }
   }
 
+  Future<void> loadMoreFavorites() async {
+    if (_favoritesState.isLoading ||
+        _favoritesState.isLoadingMore ||
+        !_favoritesState.hasMore) {
+      return;
+    }
+
+    final String? cursor = _favoritesState.nextCursor;
+    if (cursor == null || cursor.isEmpty) {
+      _updateFavoritesState(_favoritesState.copyWith(hasMore: false));
+      return;
+    }
+
+    _updateFavoritesState(
+      _favoritesState.copyWith(isLoadingMore: true, clearError: true),
+    );
+
+    try {
+      final FeedPage page = await _feedApiClient.fetchFavorites(
+        _accessToken,
+        limit: _pageSize,
+        cursor: cursor,
+      );
+
+      final List<FeedPost> mergedItems = _mergeItems(
+        _favoritesState.items,
+        page.items,
+      );
+
+      _updateFavoritesState(
+        _favoritesState.copyWith(
+          items: mergedItems,
+          isLoadingMore: false,
+          hasMore: page.hasMore,
+          nextCursor: page.nextCursor,
+          clearError: true,
+        ),
+      );
+    } catch (error) {
+      _updateFavoritesState(
+        _favoritesState.copyWith(
+          isLoadingMore: false,
+          errorMessage: mapFeedErrorMessage(error),
+        ),
+      );
+    }
+  }
+
   Future<void> reactToPost(String postId, FeedReactionKind reaction) async {
     try {
       final FeedPostReactionResult result = await _feedApiClient.reactToPost(
@@ -137,34 +274,92 @@ class FeedController extends ChangeNotifier {
         (FeedPost item) => item.id == result.postId,
       );
       if (postIndex == -1) {
+        final int favoriteIndex = _favoritesState.items.indexWhere(
+          (FeedPost item) => item.id == result.postId,
+        );
+        if (favoriteIndex == -1) {
+          return;
+        }
+      }
+
+      final FeedPost? basePost = _findPostById(result.postId);
+      if (basePost == null) {
         return;
       }
 
-      // Replacing only the changed post keeps the update work bounded even
-      // when the visible feed grows large.
-      final List<FeedPost> nextItems = List<FeedPost>.of(_state.items);
-      nextItems[postIndex] = nextItems[postIndex].copyWith(
+      final FeedPost updatedPost = basePost.copyWith(
         reactionCount: result.reactionCount,
         reactionSummary: result.reactionSummary,
         viewerReaction: result.viewerReaction,
         clearViewerReaction: result.viewerReaction == null,
       );
 
-      _updateState(_state.copyWith(items: nextItems, clearError: true));
+      _updateBothStates(
+        feedState: _replacePostInState(_state, updatedPost, clearError: true),
+        favoritesState: _replacePostInState(
+          _favoritesState,
+          updatedPost,
+          clearError: true,
+        ),
+        urgentState: _replacePostInState(
+          _urgentState,
+          updatedPost,
+          clearError: true,
+        ),
+      );
     } catch (error) {
       _updateState(_state.copyWith(errorMessage: mapFeedErrorMessage(error)));
     }
   }
 
+  Future<bool> toggleFavorite(String postId) async {
+    final FeedPostFavoriteResult result = await _feedApiClient.toggleFavorite(
+      _accessToken,
+      postId: postId,
+    );
+
+    final FeedPost? basePost = _findPostById(postId);
+    if (basePost == null) {
+      return result.viewerHasFavorited;
+    }
+
+    final FeedPost updatedPost = basePost.copyWith(
+      viewerHasFavorited: result.viewerHasFavorited,
+    );
+
+    final FeedState nextFeedState = _replacePostInState(
+      _state,
+      updatedPost,
+      clearError: true,
+    );
+    final FeedState nextFavoritesState = result.viewerHasFavorited
+        ? _upsertFavoritePost(updatedPost)
+        : _removeFavoritePost(postId);
+
+    _updateBothStates(
+      feedState: nextFeedState,
+      favoritesState: nextFavoritesState.copyWith(clearError: true),
+      urgentState: _replacePostInState(
+        _urgentState,
+        updatedPost,
+        clearError: true,
+      ),
+    );
+
+    return result.viewerHasFavorited;
+  }
+
   Future<FeedCreatePostResult> createPost({
     required String body,
     required FeedVisibility visibility,
+    required FeedPostType? type,
     required bool saveAsDraft,
   }) {
     return _feedApiClient.createPost(
       _accessToken,
       body: body,
       visibility: visibility,
+      type: type,
       saveAsDraft: saveAsDraft,
     );
   }
@@ -173,10 +368,20 @@ class FeedController extends ChangeNotifier {
     return _feedApiClient.fetchLatestDraft(_accessToken);
   }
 
+  Future<FeedUrgentEligibility> fetchUrgentEligibility({
+    String? excludePostId,
+  }) {
+    return _feedApiClient.fetchUrgentEligibility(
+      _accessToken,
+      excludePostId: excludePostId,
+    );
+  }
+
   Future<FeedUpdatePostResult> updatePost({
     required String postId,
     required String body,
     required FeedVisibility visibility,
+    required FeedPostType? type,
     bool publish = false,
   }) {
     return _feedApiClient.updatePost(
@@ -184,6 +389,7 @@ class FeedController extends ChangeNotifier {
       postId: postId,
       body: body,
       visibility: visibility,
+      type: type,
       publish: publish,
     );
   }
@@ -198,7 +404,23 @@ class FeedController extends ChangeNotifier {
     final List<FeedPost> nextItems = _state.items
         .where((FeedPost item) => item.id != postId)
         .toList(growable: false);
-    _updateState(_state.copyWith(items: nextItems, clearError: true));
+    final List<FeedPost> nextFavoriteItems = _favoritesState.items
+        .where((FeedPost item) => item.id != postId)
+        .toList(growable: false);
+    final List<FeedPost> nextUrgentItems = _urgentState.items
+        .where((FeedPost item) => item.id != postId)
+        .toList(growable: false);
+    _updateBothStates(
+      feedState: _state.copyWith(items: nextItems, clearError: true),
+      favoritesState: _favoritesState.copyWith(
+        items: nextFavoriteItems,
+        clearError: true,
+      ),
+      urgentState: _urgentState.copyWith(
+        items: nextUrgentItems,
+        clearError: true,
+      ),
+    );
   }
 
   Future<void> reportPost(String postId, FeedReportSubmission submission) {
@@ -210,12 +432,92 @@ class FeedController extends ChangeNotifier {
   }
 
   void _updateState(FeedState nextState) {
+    _updateBothStates(feedState: nextState);
+  }
+
+  void _updateFavoritesState(FeedState nextState) {
+    _updateBothStates(favoritesState: nextState);
+  }
+
+  void _updateBothStates({
+    FeedState? feedState,
+    FeedState? favoritesState,
+    FeedState? urgentState,
+  }) {
     if (_isDisposed) {
       return;
     }
 
-    _state = nextState;
+    _state = feedState ?? _state;
+    _favoritesState = favoritesState ?? _favoritesState;
+    _urgentState = urgentState ?? _urgentState;
     notifyListeners();
+  }
+
+  List<FeedPost> _mergeItems(List<FeedPost> current, List<FeedPost> incoming) {
+    final Set<String> existingIds = current
+        .map((FeedPost item) => item.id)
+        .toSet();
+    return <FeedPost>[
+      ...current,
+      ...incoming.where((FeedPost item) => !existingIds.contains(item.id)),
+    ];
+  }
+
+  FeedPost? _findPostById(String postId) {
+    for (final FeedPost item in _state.items) {
+      if (item.id == postId) {
+        return item;
+      }
+    }
+
+    for (final FeedPost item in _favoritesState.items) {
+      if (item.id == postId) {
+        return item;
+      }
+    }
+
+    return null;
+  }
+
+  FeedState _replacePostInState(
+    FeedState source,
+    FeedPost updatedPost, {
+    bool clearError = false,
+  }) {
+    final int index = source.items.indexWhere(
+      (FeedPost item) => item.id == updatedPost.id,
+    );
+    if (index == -1) {
+      return clearError ? source.copyWith(clearError: true) : source;
+    }
+
+    final List<FeedPost> nextItems = List<FeedPost>.of(source.items);
+    nextItems[index] = updatedPost;
+    return source.copyWith(items: nextItems, clearError: clearError);
+  }
+
+  FeedState _upsertFavoritePost(FeedPost updatedPost) {
+    final int index = _favoritesState.items.indexWhere(
+      (FeedPost item) => item.id == updatedPost.id,
+    );
+    if (index == -1) {
+      return _favoritesState.copyWith(
+        items: <FeedPost>[updatedPost, ..._favoritesState.items],
+      );
+    }
+
+    final List<FeedPost> nextItems = List<FeedPost>.of(_favoritesState.items);
+    nextItems[index] = updatedPost;
+    return _favoritesState.copyWith(items: nextItems);
+  }
+
+  FeedState _removeFavoritePost(String postId) {
+    return _favoritesState.copyWith(
+      items: _favoritesState.items
+          .where((FeedPost item) => item.id != postId)
+          .toList(growable: false),
+    );
   }
 
   @override

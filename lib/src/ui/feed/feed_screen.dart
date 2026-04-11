@@ -14,6 +14,7 @@ import "../../feed/feed_reaction.dart";
 import "feed_account_sheet.dart";
 import "feed_bottom_bar.dart";
 import "feed_create_view.dart";
+import "feed_detail_screen.dart";
 import "feed_edit_expired_dialog.dart";
 import "feed_delete_confirm_dialog.dart";
 import "feed_draft_resume_dialog.dart";
@@ -43,36 +44,49 @@ class _FeedScreenState extends State<FeedScreen> {
   static const bool _defaultAnonymousPosting = true;
 
   late final FeedController _controller;
-  late final ScrollController _scrollController;
-  late final FeedScrollPagination _scrollPagination;
+  late final ScrollController _feedScrollController;
+  late final ScrollController _favoritesScrollController;
+  late final FeedScrollPagination _feedScrollPagination;
+  late final FeedScrollPagination _favoritesScrollPagination;
   late final TextEditingController _composerController;
   FeedDraft? _activeDraft;
   FeedDraft? _cachedLatestDraft;
+  FeedUrgentEligibility? _urgentEligibility;
   FeedPost? _editingPost;
   int _selectedTabIndex = 0;
   bool _postAnonymously = _defaultAnonymousPosting;
+  bool _postAsUrgent = false;
   bool _isSubmittingComposer = false;
   bool _isCheckingDraftEntry = false;
+  bool _isLoadingUrgentEligibility = false;
   bool _hasResolvedLatestDraft = false;
   String _composerBaselineBody = "";
   bool _composerBaselineAnonymous = _defaultAnonymousPosting;
+  bool _composerBaselineUrgent = false;
 
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController();
+    _feedScrollController = ScrollController();
+    _favoritesScrollController = ScrollController();
     _composerController = TextEditingController();
     _controller = widget.controller;
-    _scrollPagination = FeedScrollPagination(
-      scrollController: _scrollController,
+    _feedScrollPagination = FeedScrollPagination(
+      scrollController: _feedScrollController,
       onLoadMore: () => unawaited(_controller.loadMore()),
+    )..attach();
+    _favoritesScrollPagination = FeedScrollPagination(
+      scrollController: _favoritesScrollController,
+      onLoadMore: () => unawaited(_controller.loadMoreFavorites()),
     )..attach();
   }
 
   @override
   void dispose() {
-    _scrollPagination.detach();
-    _scrollController.dispose();
+    _feedScrollPagination.detach();
+    _favoritesScrollPagination.detach();
+    _feedScrollController.dispose();
+    _favoritesScrollController.dispose();
     _composerController.dispose();
     super.dispose();
   }
@@ -122,6 +136,8 @@ class _FeedScreenState extends State<FeedScreen> {
     if (index == _selectedTabIndex) {
       if (index == 0) {
         unawaited(_controller.refreshFeed());
+      } else if (index == 2) {
+        unawaited(_controller.refreshFavorites());
       }
       return;
     }
@@ -143,14 +159,18 @@ class _FeedScreenState extends State<FeedScreen> {
           _activeDraft == null &&
           _composerController.text.trim().isEmpty) {
         _postAnonymously = _defaultAnonymousPosting;
+        _postAsUrgent = false;
         _composerBaselineBody = "";
         _composerBaselineAnonymous = _defaultAnonymousPosting;
+        _composerBaselineUrgent = false;
       }
       _selectedTabIndex = index;
     });
 
     if (index == 1) {
       unawaited(_prepareCreateComposerEntry());
+    } else if (index == 2) {
+      unawaited(_controller.bootstrapFavorites());
     }
   }
 
@@ -158,7 +178,40 @@ class _FeedScreenState extends State<FeedScreen> {
     unawaited(_controller.reactToPost(post.id, reaction));
   }
 
-  void _handleEditSelected(FeedPost post) {
+  Future<bool> _handleFavoriteToggled(FeedPost post) async {
+    final bool willFavorite = !post.isFavorited;
+
+    try {
+      final bool isFavorited = await _controller.toggleFavorite(post.id);
+
+      if (!mounted) {
+        return isFavorited;
+      }
+
+      _showNotice(
+        isFavorited
+            ? "Saved to your favorites."
+            : "Removed from your favorites.",
+        duration: const Duration(milliseconds: 1400),
+      );
+
+      return isFavorited;
+    } catch (error) {
+      if (!mounted) {
+        rethrow;
+      }
+
+      if (willFavorite) {
+        _showNotice(mapFeedErrorMessage(error));
+        rethrow;
+      }
+
+      _showNotice(mapFeedErrorMessage(error));
+      rethrow;
+    }
+  }
+
+  Future<void> _handleEditSelected(FeedPost post) async {
     if (!post.isWithinEditWindow) {
       unawaited(showFeedEditExpiredDialog(context));
       return;
@@ -173,38 +226,43 @@ class _FeedScreenState extends State<FeedScreen> {
       _activeDraft = null;
       _editingPost = post;
       _postAnonymously = post.isAnonymous;
+      _postAsUrgent = post.isUrgent;
       _composerBaselineBody = post.body;
       _composerBaselineAnonymous = post.isAnonymous;
+      _composerBaselineUrgent = post.isUrgent;
       _selectedTabIndex = 1;
     });
+    unawaited(_loadUrgentEligibility(excludePostId: post.id));
   }
 
-  Future<void> _handleDeleteSelected(FeedPost post) async {
+  Future<bool> _handleDeleteSelected(FeedPost post) async {
     final bool confirmed = await showFeedDeleteConfirmDialog(context);
     if (!confirmed || !mounted) {
-      return;
+      return false;
     }
 
     try {
       await _controller.deletePost(post.id);
 
       if (!mounted) {
-        return;
+        return false;
       }
 
       _showNotice("Prayer deleted.");
+      return true;
     } catch (error) {
       if (!mounted) {
-        return;
+        return false;
       }
 
       if (error is ApiException &&
           error.message == "You already reported this prayer.") {
         await showFeedReportedNoticeDialog(context);
-        return;
+        return false;
       }
 
       _showNotice(mapFeedErrorMessage(error));
+      return false;
     }
   }
 
@@ -233,6 +291,46 @@ class _FeedScreenState extends State<FeedScreen> {
     }
   }
 
+  Future<void> _openDetail(FeedPost post) {
+    return Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) {
+          return FeedDetailScreen(
+            controller: _controller,
+            initialPost: post,
+            onReact: (String postId, FeedReactionKind reaction) {
+              return _controller.reactToPost(postId, reaction);
+            },
+            onToggleFavorite: (String postId) async {
+              final FeedPost currentPost =
+                  _findPostById(postId) ?? post;
+              return _handleFavoriteToggled(currentPost);
+            },
+            onEdit: _handleEditSelected,
+            onDelete: _handleDeleteSelected,
+            onReport: _handleReportSelected,
+          );
+        },
+      ),
+    );
+  }
+
+  FeedPost? _findPostById(String postId) {
+    for (final FeedPost item in _controller.state.items) {
+      if (item.id == postId) {
+        return item;
+      }
+    }
+
+    for (final FeedPost item in _controller.favoritesState.items) {
+      if (item.id == postId) {
+        return item;
+      }
+    }
+
+    return null;
+  }
+
   Widget _buildCurrentTab() {
     switch (_selectedTabIndex) {
       case 1:
@@ -241,10 +339,19 @@ class _FeedScreenState extends State<FeedScreen> {
           identityLabel: widget.session.user.name ?? widget.session.user.email,
           bodyController: _composerController,
           isAnonymous: _postAnonymously,
+          isUrgent: _postAsUrgent,
+          isUrgentEnabled: _canToggleUrgent,
+          isUrgentLoading: _isLoadingUrgentEligibility,
+          urgentHelperText: _urgentHelperText,
           isSubmitting: _isSubmittingComposer,
           onAnonymousChanged: (bool value) {
             setState(() {
               _postAnonymously = value;
+            });
+          },
+          onUrgentChanged: (bool value) {
+            setState(() {
+              _postAsUrgent = value;
             });
           },
           primaryActionLabel: _editingPost == null ? "SHARE" : "UPDATE",
@@ -258,7 +365,33 @@ class _FeedScreenState extends State<FeedScreen> {
               _showNotice("Quote templates are not connected yet."),
         );
       case 2:
-        return const _ActivityPlaceholderView();
+        return AnimatedBuilder(
+          animation: _controller,
+          builder: (BuildContext context, _) {
+            return FeedView(
+              state: _controller.favoritesState,
+              scrollController: _favoritesScrollController,
+              onRetry: _controller.refreshFavorites,
+              onLoadMore: _controller.loadMoreFavorites,
+              onOpenDetail: (FeedPost post) => unawaited(_openDetail(post)),
+              onReact: _handleReactionSelected,
+              onToggleFavorite: (FeedPost post) =>
+                  unawaited(_handleFavoriteToggled(post)),
+              onEdit: _handleEditSelected,
+              onDelete: (FeedPost post) =>
+                  unawaited(_handleDeleteSelected(post)),
+              onReport: (FeedPost post) =>
+                  unawaited(_handleReportSelected(post)),
+              headerTitle: "Saved prayers.",
+              headerBody:
+                  "Keep the prayers that stayed with you close.\nReturn here whenever you want to revisit them.",
+              loadingMessage: "Loading saved prayers...",
+              emptyTitle: "No saved prayers yet.",
+              emptyBody:
+                  "When a prayer stays with you, tap the bookmark and it will appear here.",
+            );
+          },
+        );
       case 0:
       default:
         // Only the feed tab listens to controller changes so typing inside the
@@ -268,15 +401,27 @@ class _FeedScreenState extends State<FeedScreen> {
           builder: (BuildContext context, _) {
             return FeedView(
               state: _controller.state,
-              scrollController: _scrollController,
+              urgentState: _controller.urgentState,
+              scrollController: _feedScrollController,
               onRetry: _controller.refreshFeed,
+              onRetryUrgent: _controller.refreshFeed,
               onLoadMore: _controller.loadMore,
+              onOpenDetail: (FeedPost post) => unawaited(_openDetail(post)),
               onReact: _handleReactionSelected,
+              onToggleFavorite: (FeedPost post) =>
+                  unawaited(_handleFavoriteToggled(post)),
               onEdit: _handleEditSelected,
               onDelete: (FeedPost post) =>
                   unawaited(_handleDeleteSelected(post)),
               onReport: (FeedPost post) =>
                   unawaited(_handleReportSelected(post)),
+              headerTitle: "A collective breath.",
+              headerBody:
+                  "Join a silent community of voices.\nShare your burdens, find solace in the\nshared spirit of hope.",
+              loadingMessage: "Loading prayers...",
+              emptyTitle: "No prayers yet.",
+              emptyBody:
+                  "The feed will appear here once stories begin to gather.",
             );
           },
         );
@@ -288,9 +433,14 @@ class _FeedScreenState extends State<FeedScreen> {
     final FeedVisibility visibility = _postAnonymously
         ? FeedVisibility.anonymous
         : FeedVisibility.public;
+    final FeedPostType? type = _postAsUrgent ? FeedPostType.urgent : null;
 
     if (body.isEmpty) {
       _showNotice("Write your prayer before continuing.");
+      return;
+    }
+
+    if (_postAsUrgent && !await _ensureUrgentAvailable()) {
       return;
     }
 
@@ -309,6 +459,7 @@ class _FeedScreenState extends State<FeedScreen> {
         await _controller.createPost(
           body: body,
           visibility: visibility,
+          type: type,
           saveAsDraft: false,
         );
       } else {
@@ -316,6 +467,7 @@ class _FeedScreenState extends State<FeedScreen> {
           postId: _activeDraft!.id,
           body: body,
           visibility: visibility,
+          type: type,
           publish: true,
         );
       }
@@ -354,6 +506,11 @@ class _FeedScreenState extends State<FeedScreen> {
       return;
     }
 
+    if (_postAsUrgent &&
+        !await _ensureUrgentAvailable(excludePostId: editingPost.id)) {
+      return;
+    }
+
     if (_isSubmittingComposer) {
       return;
     }
@@ -369,6 +526,7 @@ class _FeedScreenState extends State<FeedScreen> {
         visibility: _postAnonymously
             ? FeedVisibility.anonymous
             : FeedVisibility.public,
+        type: _postAsUrgent ? FeedPostType.urgent : null,
       );
 
       if (!mounted) {
@@ -406,6 +564,7 @@ class _FeedScreenState extends State<FeedScreen> {
     final FeedVisibility visibility = _postAnonymously
         ? FeedVisibility.anonymous
         : FeedVisibility.public;
+    final FeedPostType? type = _postAsUrgent ? FeedPostType.urgent : null;
     final FeedDraft? activeDraft = _activeDraft;
 
     setState(() {
@@ -417,6 +576,7 @@ class _FeedScreenState extends State<FeedScreen> {
         final result = await _controller.createPost(
           body: body,
           visibility: visibility,
+          type: type,
           saveAsDraft: true,
         );
         _cacheLatestDraft(
@@ -425,6 +585,7 @@ class _FeedScreenState extends State<FeedScreen> {
                   id: result.id,
                   body: body,
                   visibility: visibility,
+                  type: result.type,
                   updatedAt: result.createdAt,
                   createdAt: result.createdAt,
                 )
@@ -435,6 +596,7 @@ class _FeedScreenState extends State<FeedScreen> {
           postId: activeDraft.id,
           body: body,
           visibility: visibility,
+          type: type,
         );
         _cacheLatestDraft(
           result.status == "DRAFT"
@@ -442,6 +604,7 @@ class _FeedScreenState extends State<FeedScreen> {
                   id: result.id,
                   body: result.body,
                   visibility: result.visibility,
+                  type: result.type,
                   updatedAt: result.updatedAt,
                   createdAt: activeDraft.createdAt,
                 )
@@ -481,6 +644,7 @@ class _FeedScreenState extends State<FeedScreen> {
     _isCheckingDraftEntry = true;
 
     try {
+      unawaited(_loadUrgentEligibility());
       final FeedDraft? latestDraft =
           await _resolveLatestDraftForComposerEntry();
 
@@ -492,7 +656,9 @@ class _FeedScreenState extends State<FeedScreen> {
         setState(() {
           _composerBaselineBody = "";
           _composerBaselineAnonymous = _defaultAnonymousPosting;
+          _composerBaselineUrgent = false;
           _postAnonymously = _defaultAnonymousPosting;
+          _postAsUrgent = false;
         });
         return;
       }
@@ -546,8 +712,10 @@ class _FeedScreenState extends State<FeedScreen> {
       _activeDraft = draft;
       _editingPost = null;
       _postAnonymously = draft.isAnonymous;
+      _postAsUrgent = draft.isUrgent;
       _composerBaselineBody = draft.body;
       _composerBaselineAnonymous = draft.isAnonymous;
+      _composerBaselineUrgent = draft.isUrgent;
       _selectedTabIndex = 1;
     });
   }
@@ -556,10 +724,11 @@ class _FeedScreenState extends State<FeedScreen> {
     final bool bodyChanged = _composerController.text != _composerBaselineBody;
     final bool visibilityChanged =
         _postAnonymously != _composerBaselineAnonymous;
+    final bool urgentChanged = _postAsUrgent != _composerBaselineUrgent;
 
     // We only auto-save non-empty drafts. That avoids leaving behind empty
     // records when the user opens the composer and immediately backs out.
-    if (!bodyChanged && !visibilityChanged) {
+    if (!bodyChanged && !visibilityChanged && !urgentChanged) {
       return false;
     }
 
@@ -593,11 +762,133 @@ class _FeedScreenState extends State<FeedScreen> {
       _activeDraft = null;
       _editingPost = null;
       _postAnonymously = _defaultAnonymousPosting;
+      _postAsUrgent = false;
       _isSubmittingComposer = false;
+      _isLoadingUrgentEligibility = false;
+      _urgentEligibility = null;
       _composerBaselineBody = "";
       _composerBaselineAnonymous = _defaultAnonymousPosting;
+      _composerBaselineUrgent = false;
       _selectedTabIndex = nextTabIndex;
     });
+  }
+
+  Future<void> _loadUrgentEligibility({String? excludePostId}) async {
+    if (_isLoadingUrgentEligibility) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingUrgentEligibility = true;
+    });
+
+    try {
+      final FeedUrgentEligibility eligibility = await _controller
+          .fetchUrgentEligibility(excludePostId: excludePostId);
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _urgentEligibility = eligibility;
+        _isLoadingUrgentEligibility = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isLoadingUrgentEligibility = false;
+      });
+      _showNotice(mapFeedErrorMessage(error));
+    }
+  }
+
+  Future<bool> _ensureUrgentAvailable({String? excludePostId}) async {
+    if (_urgentEligibility == null) {
+      await _loadUrgentEligibility(excludePostId: excludePostId);
+    }
+
+    final FeedUrgentEligibility? eligibility = _urgentEligibility;
+    if (eligibility == null) {
+      return false;
+    }
+
+    if (eligibility.canUseUrgent) {
+      return true;
+    }
+
+    _showNotice(_urgentUnavailableNotice(eligibility));
+    return false;
+  }
+
+  bool get _canToggleUrgent {
+    if (_postAsUrgent) {
+      return true;
+    }
+
+    if (_isLoadingUrgentEligibility) {
+      return false;
+    }
+
+    return _urgentEligibility?.canUseUrgent ?? false;
+  }
+
+  String get _urgentHelperText {
+    final FeedUrgentEligibility? eligibility = _urgentEligibility;
+    if (_isLoadingUrgentEligibility) {
+      return "Checking your urgent prayer availability...";
+    }
+
+    if (eligibility == null) {
+      return "Urgent prayers are limited by a cooldown window.";
+    }
+
+    if (eligibility.canUseUrgent) {
+      return "Use this for time-sensitive prayer requests. One urgent prayer every ${_formatUrgentCooldown(eligibility.cooldownSeconds)}.";
+    }
+
+    return _urgentUnavailableNotice(eligibility);
+  }
+
+  String _urgentUnavailableNotice(FeedUrgentEligibility eligibility) {
+    final DateTime? nextAvailableAt = eligibility.nextAvailableAt?.toLocal();
+    if (nextAvailableAt == null) {
+      return "Urgent prayers are limited to one per ${_formatUrgentCooldown(eligibility.cooldownSeconds)}.";
+    }
+
+    final MaterialLocalizations localizations = MaterialLocalizations.of(
+      context,
+    );
+    final String dateLabel = localizations.formatMediumDate(nextAvailableAt);
+    final String timeLabel = localizations.formatTimeOfDay(
+      TimeOfDay.fromDateTime(nextAvailableAt),
+    );
+    return "Urgent will be available again on $dateLabel at $timeLabel.";
+  }
+
+  String _formatUrgentCooldown(int cooldownSeconds) {
+    const int secondsPerDay = 24 * 60 * 60;
+    const int secondsPerHour = 60 * 60;
+
+    if (cooldownSeconds % secondsPerDay == 0) {
+      final int days = cooldownSeconds ~/ secondsPerDay;
+      return days == 1 ? "1 day" : "$days days";
+    }
+
+    if (cooldownSeconds % secondsPerHour == 0) {
+      final int hours = cooldownSeconds ~/ secondsPerHour;
+      return hours == 1 ? "1 hour" : "$hours hours";
+    }
+
+    if (cooldownSeconds % 60 == 0) {
+      final int minutes = cooldownSeconds ~/ 60;
+      return minutes == 1 ? "1 minute" : "$minutes minutes";
+    }
+
+    return cooldownSeconds == 1 ? "1 second" : "$cooldownSeconds seconds";
   }
 
   void _showNotice(String message, {Duration? duration}) {
@@ -609,47 +900,5 @@ class _FeedScreenState extends State<FeedScreen> {
           duration: duration ?? const Duration(seconds: 2),
         ),
       );
-  }
-}
-
-class _ActivityPlaceholderView extends StatelessWidget {
-  const _ActivityPlaceholderView();
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Center(
-        child: EditorialCenteredViewport(
-          maxWidth: 620,
-          child: Padding(
-            padding: const EdgeInsets.only(top: 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: const <Widget>[
-                Text(
-                  "Activity will gather here.",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: EditorialColors.onSurface,
-                  ),
-                ),
-                SizedBox(height: 12),
-                Text(
-                  "Reactions, encouragement, and future updates are not connected yet.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    height: 1.7,
-                    color: EditorialColors.onSurfaceMuted,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

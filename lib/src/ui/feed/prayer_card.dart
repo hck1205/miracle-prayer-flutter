@@ -12,14 +12,18 @@ class PrayerCard extends StatelessWidget {
   const PrayerCard({
     super.key,
     required this.item,
+    required this.onOpenDetail,
     required this.onReact,
+    required this.onToggleFavorite,
     required this.onEdit,
     required this.onDelete,
     required this.onReport,
   });
 
   final FeedPost item;
+  final VoidCallback onOpenDetail;
   final ValueChanged<FeedReactionKind> onReact;
+  final VoidCallback onToggleFavorite;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onReport;
@@ -33,13 +37,24 @@ class PrayerCard extends StatelessWidget {
           Row(
             children: <Widget>[
               Text(formatFeedAuthorLabel(item), style: FeedStyles.authorLabel),
+              if (item.isUrgent) ...<Widget>[
+                const SizedBox(width: 10),
+                UrgentBadge(),
+              ],
               const Spacer(),
               Text(
                 formatFeedPublishedTimeAgo(item.publishedAt),
                 style: FeedStyles.publishedLabel,
               ),
+              if (!item.viewerCanEdit || item.isFavorited) ...<Widget>[
+                const SizedBox(width: 8),
+                PrayerCardFavoriteButton(
+                  isFavorited: item.isFavorited,
+                  onTap: onToggleFavorite,
+                ),
+              ],
               const SizedBox(width: 8),
-              _PrayerCardMenuButton(
+              PrayerCardMenuButton(
                 isOwnPost: item.viewerCanEdit,
                 onEdit: onEdit,
                 onDelete: onDelete,
@@ -48,25 +63,38 @@ class PrayerCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(28, 28, 28, 18),
-            decoration: FeedStyles.prayerBodyDecoration(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                ExpandablePrayerBody(
-                  body: item.body,
-                  style: FeedStyles.prayerBody(),
-                ),
-                if (item.reactionSummary.hasAny) ...<Widget>[
-                  const SizedBox(height: 16),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: ReactionCountRow(summary: item.reactionSummary),
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: Semantics(
+              button: true,
+              label: "Open prayer details",
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onOpenDetail,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(28, 28, 28, 18),
+                  decoration: FeedStyles.prayerBodyDecoration(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      ExpandablePrayerBody(
+                        body: item.body,
+                        style: FeedStyles.prayerBody(),
+                      ),
+                      if (item.reactionSummary.hasAny) ...<Widget>[
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: ReactionCountRow(
+                            summary: item.reactionSummary,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ],
-              ],
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -81,8 +109,81 @@ class PrayerCard extends StatelessWidget {
   }
 }
 
-class _PrayerCardMenuButton extends StatelessWidget {
-  const _PrayerCardMenuButton({
+class UrgentBadge extends StatelessWidget {
+  const UrgentBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: EditorialColors.error.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: EditorialColors.error.withValues(alpha: 0.24),
+        ),
+      ),
+      child: const Text(
+        "URGENT",
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.2,
+          color: EditorialColors.error,
+        ),
+      ),
+    );
+  }
+}
+
+class PrayerCardFavoriteButton extends StatelessWidget {
+  const PrayerCardFavoriteButton({
+    super.key,
+    required this.isFavorited,
+    required this.onTap,
+  });
+
+  final bool isFavorited;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color iconColor = isFavorited
+        ? EditorialColors.onSurface
+        : EditorialColors.outline;
+
+    return Tooltip(
+      message: isFavorited ? "Remove from saved prayers" : "Save prayer",
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: onTap,
+          child: Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: isFavorited
+                  ? EditorialColors.surfaceContainer
+                  : EditorialColors.surfaceLow,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              isFavorited ? Icons.bookmark : Icons.bookmark_border,
+              size: 16,
+              color: iconColor,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class PrayerCardMenuButton extends StatelessWidget {
+  const PrayerCardMenuButton({
+    super.key,
     required this.isOwnPost,
     required this.onEdit,
     required this.onDelete,
