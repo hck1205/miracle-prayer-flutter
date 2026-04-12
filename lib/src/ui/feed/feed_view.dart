@@ -420,25 +420,6 @@ class _UrgentPrayerCard extends StatelessWidget {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: EditorialColors.error.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        "URGENT",
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          fontSize: 10,
-                          letterSpacing: 1.8,
-                          fontWeight: FontWeight.w800,
-                          color: EditorialColors.error,
-                        ),
-                      ),
-                    ),
                     const Spacer(),
                     Text(
                       formatFeedPublishedTimeAgo(post.publishedAt),

@@ -25,6 +25,21 @@ class FeedApiClient {
     );
   }
 
+  Future<FeedPage> searchFeed(
+    String accessToken, {
+    required String query,
+    int limit = 10,
+    String? cursor,
+  }) async {
+    return _fetchCollection(
+      accessToken,
+      path: "/v1/feed/search",
+      limit: limit,
+      cursor: cursor,
+      queryParameters: <String, String>{"q": query},
+    );
+  }
+
   Future<FeedPage> fetchFavorites(
     String accessToken, {
     int limit = 10,
@@ -54,8 +69,18 @@ class FeedApiClient {
     required String path,
     required int limit,
     String? cursor,
+    Map<String, String> queryParameters = const <String, String>{},
   }) async {
     final StringBuffer requestPath = StringBuffer("$path?limit=$limit");
+    for (final MapEntry<String, String> entry in queryParameters.entries) {
+      if (entry.value.isEmpty) {
+        continue;
+      }
+
+      requestPath.write(
+        "&${Uri.encodeQueryComponent(entry.key)}=${Uri.encodeQueryComponent(entry.value)}",
+      );
+    }
     if (cursor != null && cursor.isNotEmpty) {
       requestPath.write("&cursor=${Uri.encodeQueryComponent(cursor)}");
     }

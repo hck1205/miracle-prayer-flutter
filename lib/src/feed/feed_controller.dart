@@ -8,8 +8,17 @@ import "feed_reaction.dart";
 import "feed_state.dart";
 
 class FeedController extends ChangeNotifier {
+  static const int _minimumSearchLength = 2;
   static const int _pageSize = 10;
   static const int _urgentPageSize = 5;
+  static const FeedState _emptySearchState = FeedState(
+    items: <FeedPost>[],
+    isLoading: false,
+    isLoadingMore: false,
+    hasMore: false,
+    nextCursor: null,
+    errorMessage: null,
+  );
 
   FeedController({
     required FeedApiClient feedApiClient,
@@ -23,13 +32,18 @@ class FeedController extends ChangeNotifier {
   FeedState _state = const FeedState.initial();
   FeedState _favoritesState = const FeedState.initial();
   FeedState _urgentState = const FeedState.initial();
+  FeedState _searchState = _emptySearchState;
   bool _didBootstrap = false;
   bool _didBootstrapFavorites = false;
   bool _isDisposed = false;
+  String _searchQuery = "";
+  int _searchRevision = 0;
 
   FeedState get state => _state;
   FeedState get favoritesState => _favoritesState;
   FeedState get urgentState => _urgentState;
+  FeedState get searchState => _searchState;
+  String get searchQuery => _searchQuery;
 
   Future<void> bootstrap() async {
     if (_didBootstrap) {
@@ -165,6 +179,86 @@ class FeedController extends ChangeNotifier {
     }
   }
 
+  Future<void> searchPosts(String query, {bool force = false}) async {
+    final String normalizedQuery = query.trim();
+
+    if (normalizedQuery.length < _minimumSearchLength) {
+      _searchQuery = "";
+      _searchRevision += 1;
+      _updateBothStates(searchState: _emptySearchState);
+      return;
+    }
+
+    if (
+      !force &&
+      normalizedQuery == _searchQuery &&
+      (_searchState.isLoading ||
+          _searchState.hasItems ||
+          _searchState.errorMessage != null ||
+          !_searchState.hasMore ||
+          _searchState.nextCursor != null)
+    ) {
+      return;
+    }
+
+    _searchQuery = normalizedQuery;
+    final int revision = ++_searchRevision;
+
+    if (normalizedQuery.isEmpty) {
+      _updateBothStates(searchState: _emptySearchState);
+      return;
+    }
+
+    _updateBothStates(
+      searchState: _searchState.copyWith(
+        items: const <FeedPost>[],
+        isLoading: true,
+        isLoadingMore: false,
+        hasMore: true,
+        clearError: true,
+        clearNextCursor: true,
+      ),
+    );
+
+    try {
+      final FeedPage page = await _feedApiClient.searchFeed(
+        _accessToken,
+        query: normalizedQuery,
+        limit: _pageSize,
+      );
+
+      if (_isDisposed || revision != _searchRevision) {
+        return;
+      }
+
+      _updateBothStates(
+        searchState: _searchState.copyWith(
+          items: page.items,
+          isLoading: false,
+          isLoadingMore: false,
+          hasMore: page.hasMore,
+          nextCursor: page.nextCursor,
+          clearError: true,
+        ),
+      );
+    } catch (error) {
+      if (_isDisposed || revision != _searchRevision) {
+        return;
+      }
+
+      _updateBothStates(
+        searchState: _searchState.copyWith(
+          items: const <FeedPost>[],
+          isLoading: false,
+          isLoadingMore: false,
+          hasMore: false,
+          errorMessage: mapFeedErrorMessage(error),
+          clearNextCursor: true,
+        ),
+      );
+    }
+  }
+
   Future<void> loadMore() async {
     if (_state.isLoading || _state.isLoadingMore || !_state.hasMore) {
       return;
@@ -262,6 +356,65 @@ class FeedController extends ChangeNotifier {
     }
   }
 
+  Future<void> loadMoreSearch() async {
+    if (_searchQuery.isEmpty ||
+        _searchState.isLoading ||
+        _searchState.isLoadingMore ||
+        !_searchState.hasMore) {
+      return;
+    }
+
+    final String? cursor = _searchState.nextCursor;
+    if (cursor == null || cursor.isEmpty) {
+      _updateBothStates(searchState: _searchState.copyWith(hasMore: false));
+      return;
+    }
+
+    final int revision = _searchRevision;
+    _updateBothStates(
+      searchState: _searchState.copyWith(isLoadingMore: true, clearError: true),
+    );
+
+    try {
+      final FeedPage page = await _feedApiClient.searchFeed(
+        _accessToken,
+        query: _searchQuery,
+        limit: _pageSize,
+        cursor: cursor,
+      );
+
+      if (_isDisposed || revision != _searchRevision) {
+        return;
+      }
+
+      final List<FeedPost> mergedItems = _mergeItems(
+        _searchState.items,
+        page.items,
+      );
+
+      _updateBothStates(
+        searchState: _searchState.copyWith(
+          items: mergedItems,
+          isLoadingMore: false,
+          hasMore: page.hasMore,
+          nextCursor: page.nextCursor,
+          clearError: true,
+        ),
+      );
+    } catch (error) {
+      if (_isDisposed || revision != _searchRevision) {
+        return;
+      }
+
+      _updateBothStates(
+        searchState: _searchState.copyWith(
+          isLoadingMore: false,
+          errorMessage: mapFeedErrorMessage(error),
+        ),
+      );
+    }
+  }
+
   Future<void> reactToPost(String postId, FeedReactionKind reaction) async {
     try {
       final FeedPostReactionResult result = await _feedApiClient.reactToPost(
@@ -269,18 +422,6 @@ class FeedController extends ChangeNotifier {
         postId: postId,
         reaction: reaction,
       );
-
-      final int postIndex = _state.items.indexWhere(
-        (FeedPost item) => item.id == result.postId,
-      );
-      if (postIndex == -1) {
-        final int favoriteIndex = _favoritesState.items.indexWhere(
-          (FeedPost item) => item.id == result.postId,
-        );
-        if (favoriteIndex == -1) {
-          return;
-        }
-      }
 
       final FeedPost? basePost = _findPostById(result.postId);
       if (basePost == null) {
@@ -303,6 +444,11 @@ class FeedController extends ChangeNotifier {
         ),
         urgentState: _replacePostInState(
           _urgentState,
+          updatedPost,
+          clearError: true,
+        ),
+        searchState: _replacePostInState(
+          _searchState,
           updatedPost,
           clearError: true,
         ),
@@ -341,6 +487,11 @@ class FeedController extends ChangeNotifier {
       favoritesState: nextFavoritesState.copyWith(clearError: true),
       urgentState: _replacePostInState(
         _urgentState,
+        updatedPost,
+        clearError: true,
+      ),
+      searchState: _replacePostInState(
+        _searchState,
         updatedPost,
         clearError: true,
       ),
@@ -420,6 +571,12 @@ class FeedController extends ChangeNotifier {
         items: nextUrgentItems,
         clearError: true,
       ),
+      searchState: _searchState.copyWith(
+        items: _searchState.items
+            .where((FeedPost item) => item.id != postId)
+            .toList(growable: false),
+        clearError: true,
+      ),
     );
   }
 
@@ -443,6 +600,7 @@ class FeedController extends ChangeNotifier {
     FeedState? feedState,
     FeedState? favoritesState,
     FeedState? urgentState,
+    FeedState? searchState,
   }) {
     if (_isDisposed) {
       return;
@@ -451,6 +609,7 @@ class FeedController extends ChangeNotifier {
     _state = feedState ?? _state;
     _favoritesState = favoritesState ?? _favoritesState;
     _urgentState = urgentState ?? _urgentState;
+    _searchState = searchState ?? _searchState;
     notifyListeners();
   }
 
@@ -477,7 +636,25 @@ class FeedController extends ChangeNotifier {
       }
     }
 
+    for (final FeedPost item in _urgentState.items) {
+      if (item.id == postId) {
+        return item;
+      }
+    }
+
+    for (final FeedPost item in _searchState.items) {
+      if (item.id == postId) {
+        return item;
+      }
+    }
+
     return null;
+  }
+
+  void clearSearch() {
+    _searchQuery = "";
+    _searchRevision += 1;
+    _updateBothStates(searchState: _emptySearchState);
   }
 
   FeedState _replacePostInState(

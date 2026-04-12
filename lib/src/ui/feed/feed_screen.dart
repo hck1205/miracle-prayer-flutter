@@ -43,13 +43,19 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   static const bool _defaultAnonymousPosting = true;
+  static const int _minimumSearchLength = 2;
+  static const Duration _searchDebounceDuration = Duration(milliseconds: 700);
 
   late final FeedController _controller;
   late final ScrollController _feedScrollController;
   late final ScrollController _favoritesScrollController;
+  late final ScrollController _searchScrollController;
   late final FeedScrollPagination _feedScrollPagination;
   late final FeedScrollPagination _favoritesScrollPagination;
+  late final FeedScrollPagination _searchScrollPagination;
   late final TextEditingController _composerController;
+  late final TextEditingController _searchController;
+  late final FocusNode _searchFocusNode;
   FeedDraft? _activeDraft;
   FeedDraft? _cachedLatestDraft;
   FeedUrgentEligibility? _urgentEligibility;
@@ -61,16 +67,22 @@ class _FeedScreenState extends State<FeedScreen> {
   bool _isCheckingDraftEntry = false;
   bool _isLoadingUrgentEligibility = false;
   bool _hasResolvedLatestDraft = false;
+  bool _isSearchMode = false;
   String _composerBaselineBody = "";
   bool _composerBaselineAnonymous = _defaultAnonymousPosting;
   bool _composerBaselineUrgent = false;
+  Timer? _searchDebounce;
+  String _pendingSearchQuery = "";
 
   @override
   void initState() {
     super.initState();
     _feedScrollController = ScrollController();
     _favoritesScrollController = ScrollController();
+    _searchScrollController = ScrollController();
     _composerController = TextEditingController();
+    _searchController = TextEditingController();
+    _searchFocusNode = FocusNode();
     _controller = widget.controller;
     _feedScrollPagination = FeedScrollPagination(
       scrollController: _feedScrollController,
@@ -80,15 +92,24 @@ class _FeedScreenState extends State<FeedScreen> {
       scrollController: _favoritesScrollController,
       onLoadMore: () => unawaited(_controller.loadMoreFavorites()),
     )..attach();
+    _searchScrollPagination = FeedScrollPagination(
+      scrollController: _searchScrollController,
+      onLoadMore: () => unawaited(_controller.loadMoreSearch()),
+    )..attach();
   }
 
   @override
   void dispose() {
     _feedScrollPagination.detach();
     _favoritesScrollPagination.detach();
+    _searchScrollPagination.detach();
     _feedScrollController.dispose();
     _favoritesScrollController.dispose();
+    _searchScrollController.dispose();
     _composerController.dispose();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    _searchDebounce?.cancel();
     super.dispose();
   }
 
@@ -105,19 +126,27 @@ class _FeedScreenState extends State<FeedScreen> {
               padding: const EdgeInsets.fromLTRB(24, 10, 24, 8),
               child: FeedTopBar(
                 onMenuTap: _showAccountSheet,
-                onSearchTap: () => _showNotice("Search is not connected yet."),
+                onSearchTap: _enterSearchMode,
+                isSearchMode: _isSearchMode,
+                searchController: _searchController,
+                searchFocusNode: _searchFocusNode,
+                onSearchChanged: _handleSearchChanged,
+                onSearchClose: _closeSearchMode,
               ),
             ),
           ),
-          Expanded(child: _buildCurrentTab()),
-          EditorialCenteredViewport(
-            maxWidth: 620,
-            padding: EdgeInsets.zero,
-            child: FeedBottomBar(
-              selectedIndex: _selectedTabIndex,
-              onSelected: _handleBottomTabSelected,
-            ),
+          Expanded(
+            child: _isSearchMode ? _buildSearchResults() : _buildCurrentTab(),
           ),
+          if (!_isSearchMode)
+            EditorialCenteredViewport(
+              maxWidth: 620,
+              padding: EdgeInsets.zero,
+              child: FeedBottomBar(
+                selectedIndex: _selectedTabIndex,
+                onSelected: _handleBottomTabSelected,
+              ),
+            ),
         ],
       ),
     );
@@ -134,6 +163,14 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   void _handleBottomTabSelected(int index) {
+    if (_isSearchMode) {
+      final int activeTabIndex = _selectedTabIndex;
+      _closeSearchMode();
+      if (index == activeTabIndex) {
+        return;
+      }
+    }
+
     if (index == _selectedTabIndex) {
       if (index == 0) {
         unawaited(_controller.refreshFeed());
@@ -216,6 +253,10 @@ class _FeedScreenState extends State<FeedScreen> {
     if (!post.isWithinEditWindow) {
       unawaited(showFeedEditExpiredDialog(context));
       return;
+    }
+
+    if (_isSearchMode) {
+      _closeSearchMode();
     }
 
     _composerController.text = post.body;
@@ -316,6 +357,53 @@ class _FeedScreenState extends State<FeedScreen> {
     );
   }
 
+  Widget _buildSearchResults() {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (BuildContext context, _) {
+        final String inputQuery = _searchController.text.trim();
+        final String query = _controller.searchQuery;
+        final bool isQueryTooShort =
+            inputQuery.isNotEmpty && inputQuery.length < _minimumSearchLength;
+
+        return FeedView(
+          state: _controller.searchState,
+          scrollController: _searchScrollController,
+          onRetry: _retrySearch,
+          onLoadMore: _controller.loadMoreSearch,
+          onOpenDetail: (FeedPost post) => unawaited(_openDetail(post)),
+          onReact: _handleReactionSelected,
+          onToggleFavorite: (FeedPost post) =>
+              unawaited(_handleFavoriteToggled(post)),
+          onEdit: _handleEditSelected,
+          onDelete: (FeedPost post) => unawaited(_handleDeleteSelected(post)),
+          onReport: (FeedPost post) => unawaited(_handleReportSelected(post)),
+          headerTitle: inputQuery.isEmpty
+              ? "Search prayers."
+              : isQueryTooShort
+              ? "Keep typing."
+              : "Search results.",
+          headerBody: inputQuery.isEmpty
+              ? "Search the community feed by words, topics,\nor short phrases."
+              : isQueryTooShort
+              ? "Enter at least 2 characters before we search the feed."
+              : "Showing prayers that mention \"$query\".",
+          loadingMessage: "Searching prayers...",
+          emptyTitle: inputQuery.isEmpty
+              ? "Start typing to search."
+              : isQueryTooShort
+              ? "Type 2 or more characters."
+              : "No matching prayers found.",
+          emptyBody: inputQuery.isEmpty
+              ? "Try words like hope, healing, family, or peace."
+              : isQueryTooShort
+              ? "Short queries create noisy results, so search starts at 2 characters."
+              : "Try a shorter phrase or different keywords.",
+        );
+      },
+    );
+  }
+
   Widget _buildCurrentTab() {
     switch (_selectedTabIndex) {
       case 1:
@@ -410,7 +498,77 @@ class _FeedScreenState extends State<FeedScreen> {
             );
           },
         );
+      }
+  }
+
+  void _enterSearchMode() {
+    if (_isSearchMode) {
+      _searchFocusNode.requestFocus();
+      return;
     }
+
+    setState(() {
+      _isSearchMode = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      _searchFocusNode.requestFocus();
+    });
+  }
+
+  void _handleSearchChanged(String value) {
+    _searchDebounce?.cancel();
+
+    final String query = value.trim();
+    _pendingSearchQuery = query;
+
+    if (query.isEmpty || query.length < _minimumSearchLength) {
+      _controller.clearSearch();
+      return;
+    }
+
+    _searchDebounce = Timer(_searchDebounceDuration, () {
+      if (!mounted || _pendingSearchQuery != query) {
+        return;
+      }
+
+      if (_searchScrollController.hasClients) {
+        _searchScrollController.jumpTo(0);
+      }
+
+      unawaited(_controller.searchPosts(query));
+    });
+  }
+
+  void _closeSearchMode() {
+    _searchDebounce?.cancel();
+    _pendingSearchQuery = "";
+    _searchController.clear();
+    _searchFocusNode.unfocus();
+    _controller.clearSearch();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isSearchMode = false;
+    });
+  }
+
+  Future<void> _retrySearch() async {
+    final String query = _searchController.text.trim();
+    if (query.isEmpty || query.length < _minimumSearchLength) {
+      _controller.clearSearch();
+      return;
+    }
+
+    _pendingSearchQuery = query;
+    await _controller.searchPosts(query, force: true);
   }
 
   Future<void> _submitComposer() async {
