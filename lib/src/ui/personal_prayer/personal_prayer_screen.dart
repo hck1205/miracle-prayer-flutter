@@ -486,9 +486,9 @@ class _NotebookHero extends StatelessWidget {
         Text(
           title,
           style:
-              _editorialContentStyle(
-                context,
+              EditorialTypography.contentStyle(
                 Theme.of(context).textTheme.headlineMedium,
+                isKorean: strings.isKorean,
               )?.copyWith(
                 color: EditorialColors.onSurface,
                 fontWeight: FontWeight.w700,
@@ -499,16 +499,17 @@ class _NotebookHero extends StatelessWidget {
         const SizedBox(height: 14),
         Text(
           body,
-          style: _editorialContentStyle(
-            context,
+          style: EditorialTypography.contentStyle(
             Theme.of(context).textTheme.bodyLarge,
+            isKorean: strings.isKorean,
           )?.copyWith(color: EditorialColors.onSurfaceMuted, height: 1.75),
         ),
         const SizedBox(height: 18),
         Text(
           "${displayName.toUpperCase()}  ${strings.prayerHeroNotebookSuffix}",
-          style: _editorialLabelStyle(
-            context,
+          style: EditorialTypography.trackedStyle(
+            Theme.of(context).textTheme.labelSmall,
+            isKorean: strings.isKorean,
             color: EditorialColors.outline,
             englishLetterSpacing: 1.4,
             koreanLetterSpacing: 0.2,
@@ -649,8 +650,9 @@ class _CalendarSheet extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       strings.prayerTimeline,
-                      style: _editorialLabelStyle(
-                        context,
+                      style: EditorialTypography.trackedStyle(
+                        Theme.of(context).textTheme.labelSmall,
+                        isKorean: strings.isKorean,
                         color: EditorialColors.outline,
                         englishLetterSpacing: 1.4,
                         koreanLetterSpacing: 0.2,
@@ -661,9 +663,9 @@ class _CalendarSheet extends StatelessWidget {
                     Text(
                       _formatMonthYear(context, visibleMonth),
                       style:
-                          _editorialContentStyle(
-                            context,
+                          EditorialTypography.contentStyle(
                             Theme.of(context).textTheme.titleMedium,
+                            isKorean: strings.isKorean,
                           )?.copyWith(
                             color: EditorialColors.onSurface,
                             fontWeight: FontWeight.w700,
@@ -692,8 +694,9 @@ class _CalendarSheet extends StatelessWidget {
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Text(
                           dayLabel,
-                          style: _editorialLabelStyle(
-                            context,
+                          style: EditorialTypography.trackedStyle(
+                            Theme.of(context).textTheme.labelSmall,
+                            isKorean: strings.isKorean,
                             color: EditorialColors.outline,
                             englishLetterSpacing: 1.1,
                             koreanLetterSpacing: 0,
@@ -941,9 +944,9 @@ class _SelectedDayPanel extends StatelessWidget {
               child: Text(
                 _formatSelectedRange(context, selectedRange),
                 style:
-                    _editorialContentStyle(
-                      context,
+                    EditorialTypography.contentStyle(
                       Theme.of(context).textTheme.titleLarge,
+                      isKorean: strings.isKorean,
                     )?.copyWith(
                       color: EditorialColors.onSurface,
                       fontWeight: FontWeight.w700,
@@ -952,8 +955,9 @@ class _SelectedDayPanel extends StatelessWidget {
             ),
             Text(
               strings.selected,
-              style: _editorialLabelStyle(
-                context,
+              style: EditorialTypography.trackedStyle(
+                Theme.of(context).textTheme.labelSmall,
+                isKorean: strings.isKorean,
                 color: EditorialColors.outline,
                 englishLetterSpacing: 1.4,
                 koreanLetterSpacing: 0.2,
@@ -1055,6 +1059,7 @@ class _DetailBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Column(
@@ -1062,8 +1067,9 @@ class _DetailBlock extends StatelessWidget {
         children: <Widget>[
           Text(
             title.toUpperCase(),
-            style: _editorialLabelStyle(
-              context,
+            style: EditorialTypography.trackedStyle(
+              Theme.of(context).textTheme.labelSmall,
+              isKorean: strings.isKorean,
               color: EditorialColors.outline,
               englishLetterSpacing: 1.4,
               koreanLetterSpacing: 0.2,
@@ -1124,27 +1130,38 @@ class _EventCard extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       _formatEventRange(context, event),
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      style: EditorialTypography.trackedStyle(
+                        Theme.of(context).textTheme.labelMedium,
+                        isKorean: strings.isKorean,
                         color: EditorialColors.outline,
+                        englishLetterSpacing: 0.5,
+                        koreanLetterSpacing: 0.1,
                         fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       event.title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: EditorialColors.onSurface,
-                      ),
+                      style:
+                          EditorialTypography.contentStyle(
+                            Theme.of(context).textTheme.titleMedium,
+                            isKorean: strings.isKorean,
+                          )?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: EditorialColors.onSurface,
+                          ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       event.details,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: EditorialColors.onSurfaceMuted,
-                        height: 1.65,
-                      ),
+                      style:
+                          EditorialTypography.contentStyle(
+                            Theme.of(context).textTheme.bodyMedium,
+                            isKorean: strings.isKorean,
+                          )?.copyWith(
+                            color: EditorialColors.onSurfaceMuted,
+                            height: 1.65,
+                          ),
                     ),
                   ],
                 ),
@@ -1157,9 +1174,13 @@ class _EventCard extends StatelessWidget {
             linkedReflectionCount == 0
                 ? strings.prayerNoLinkedNotes
                 : strings.prayerLinkedNotes(linkedReflectionCount),
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            style: EditorialTypography.trackedStyle(
+              Theme.of(context).textTheme.labelMedium,
+              isKorean: strings.isKorean,
               color: EditorialColors.onSurfaceMuted,
-              letterSpacing: 0.6,
+              englishLetterSpacing: 0.6,
+              koreanLetterSpacing: 0.1,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -1179,6 +1200,7 @@ class _DailyReflectionSnippet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     return EditorialSheet(
       tone: EditorialSheetTone.subtle,
       padding: const EdgeInsets.all(20),
@@ -1190,10 +1212,14 @@ class _DailyReflectionSnippet extends StatelessWidget {
               Expanded(
                 child: Text(
                   entry.title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: EditorialColors.onSurface,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style:
+                      EditorialTypography.contentStyle(
+                        Theme.of(context).textTheme.titleMedium,
+                        isKorean: strings.isKorean,
+                      )?.copyWith(
+                        color: EditorialColors.onSurface,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
               ),
               if (linkedEvent != null)
@@ -1217,8 +1243,9 @@ class _DailyReflectionSnippet extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         linkedEvent!.title,
-                        style: _editorialLabelStyle(
-                          context,
+                        style: EditorialTypography.trackedStyle(
+                          Theme.of(context).textTheme.labelSmall,
+                          isKorean: strings.isKorean,
                           color: EditorialColors.outline,
                           englishLetterSpacing: 0.2,
                           koreanLetterSpacing: 0,
@@ -1233,10 +1260,10 @@ class _DailyReflectionSnippet extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             _preview(entry.body),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: EditorialColors.onSurfaceMuted,
-              height: 1.75,
-            ),
+            style: EditorialTypography.contentStyle(
+              Theme.of(context).textTheme.bodyMedium,
+              isKorean: strings.isKorean,
+            )?.copyWith(color: EditorialColors.onSurfaceMuted, height: 1.75),
           ),
         ],
       ),
@@ -1259,6 +1286,7 @@ class _ReflectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     return EditorialSheet(
       tone: EditorialSheetTone.elevated,
       padding: const EdgeInsets.all(20),
@@ -1289,19 +1317,26 @@ class _ReflectionCard extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       _formatShortDate(context, entry.date).toUpperCase(),
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      style: EditorialTypography.trackedStyle(
+                        Theme.of(context).textTheme.labelMedium,
+                        isKorean: strings.isKorean,
                         color: EditorialColors.outline,
-                        letterSpacing: 0.5,
+                        englishLetterSpacing: 0.5,
+                        koreanLetterSpacing: 0.1,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       entry.title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: EditorialColors.onSurface,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style:
+                          EditorialTypography.contentStyle(
+                            Theme.of(context).textTheme.titleMedium,
+                            isKorean: strings.isKorean,
+                          )?.copyWith(
+                            color: EditorialColors.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
                     ),
                   ],
                 ),
@@ -1312,10 +1347,10 @@ class _ReflectionCard extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             _preview(entry.body, maxLength: 180),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: EditorialColors.onSurfaceMuted,
-              height: 1.75,
-            ),
+            style: EditorialTypography.contentStyle(
+              Theme.of(context).textTheme.bodyMedium,
+              isKorean: strings.isKorean,
+            )?.copyWith(color: EditorialColors.onSurfaceMuted, height: 1.75),
           ),
           if (linkedEvent != null) ...<Widget>[
             const SizedBox(height: 16),
@@ -1338,8 +1373,12 @@ class _ReflectionCard extends StatelessWidget {
                     child: Text(
                       linkedEvent!.title,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      style: EditorialTypography.trackedStyle(
+                        Theme.of(context).textTheme.labelMedium,
+                        isKorean: strings.isKorean,
                         color: EditorialColors.outline,
+                        englishLetterSpacing: 0.2,
+                        koreanLetterSpacing: 0,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1422,18 +1461,22 @@ class _EmptyReflectionState extends StatelessWidget {
         children: <Widget>[
           Text(
             strings.prayerEmptyNotebookTitle,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: EditorialColors.onSurface,
-              fontWeight: FontWeight.w700,
-            ),
+            style:
+                EditorialTypography.contentStyle(
+                  Theme.of(context).textTheme.headlineSmall,
+                  isKorean: strings.isKorean,
+                )?.copyWith(
+                  color: EditorialColors.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
           const SizedBox(height: 14),
           Text(
             strings.prayerEmptyNotebookBody,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: EditorialColors.onSurfaceMuted,
-              height: 1.75,
-            ),
+            style: EditorialTypography.contentStyle(
+              Theme.of(context).textTheme.bodyLarge,
+              isKorean: strings.isKorean,
+            )?.copyWith(color: EditorialColors.onSurfaceMuted, height: 1.75),
           ),
           const SizedBox(height: 22),
           Row(
@@ -1484,17 +1527,22 @@ class FeedLikeQuote extends StatelessWidget {
               children: <Widget>[
                 Text(
                   strings.prayerQuoteBody,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: EditorialColors.onSurfaceMuted,
-                    fontStyle: FontStyle.italic,
-                    height: 1.8,
-                  ),
+                  style:
+                      EditorialTypography.contentStyle(
+                        Theme.of(context).textTheme.bodyLarge,
+                        isKorean: strings.isKorean,
+                      )?.copyWith(
+                        color: EditorialColors.onSurfaceMuted,
+                        fontStyle: FontStyle.italic,
+                        height: 1.8,
+                      ),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   strings.prayerQuoteReference,
-                  style: _editorialLabelStyle(
-                    context,
+                  style: EditorialTypography.trackedStyle(
+                    Theme.of(context).textTheme.labelSmall,
+                    isKorean: strings.isKorean,
                     color: EditorialColors.outline,
                     englishLetterSpacing: 1.4,
                     koreanLetterSpacing: 0.2,
@@ -1657,9 +1705,10 @@ class _EventEditorSheetState extends State<_EventEditorSheet> {
               isEditing
                   ? strings.prayerEditPrayerEvent
                   : strings.prayerAddPrayerEvent,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              style: EditorialTypography.contentStyle(
+                Theme.of(context).textTheme.titleLarge,
+                isKorean: strings.isKorean,
+              )?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 18),
             _SheetField(
@@ -1676,9 +1725,10 @@ class _EventEditorSheetState extends State<_EventEditorSheet> {
                 ),
                 child: Text(
                   _formatSelectedRange(context, _selectedRange),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: EditorialColors.onSurface,
-                  ),
+                  style: EditorialTypography.contentStyle(
+                    Theme.of(context).textTheme.bodyMedium,
+                    isKorean: strings.isKorean,
+                  )?.copyWith(color: EditorialColors.onSurface),
                 ),
               ),
             ),
@@ -1804,9 +1854,10 @@ class _ReflectionEditorSheetState extends State<_ReflectionEditorSheet> {
                 isEditing
                     ? strings.prayerEditPrayerNote
                     : strings.prayerNewPrayerNote,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                style: EditorialTypography.contentStyle(
+                  Theme.of(context).textTheme.titleLarge,
+                  isKorean: strings.isKorean,
+                )?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 18),
               _SheetField(
@@ -1823,9 +1874,10 @@ class _ReflectionEditorSheetState extends State<_ReflectionEditorSheet> {
                   ),
                   child: Text(
                     _formatSelectedRange(context, _selectedRange),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: EditorialColors.onSurface,
-                    ),
+                    style: EditorialTypography.contentStyle(
+                      Theme.of(context).textTheme.bodyMedium,
+                      isKorean: strings.isKorean,
+                    )?.copyWith(color: EditorialColors.onSurface),
                   ),
                 ),
               ),
@@ -1925,13 +1977,15 @@ class _SheetField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
           label.toUpperCase(),
-          style: _editorialLabelStyle(
-            context,
+          style: EditorialTypography.trackedStyle(
+            Theme.of(context).textTheme.labelSmall,
+            isKorean: strings.isKorean,
             color: EditorialColors.outline,
             englishLetterSpacing: 1.4,
             koreanLetterSpacing: 0.2,
@@ -1995,39 +2049,6 @@ class _ReflectionDraft {
   final String title;
   final String body;
   final String? linkedEventId;
-}
-
-TextStyle? _editorialContentStyle(BuildContext context, TextStyle? style) {
-  if (style == null) {
-    return null;
-  }
-
-  if (!context.strings.isKorean) {
-    return style;
-  }
-
-  return EditorialTypography.withKoreanContent(style);
-}
-
-TextStyle? _editorialLabelStyle(
-  BuildContext context, {
-  required Color color,
-  required double englishLetterSpacing,
-  required double koreanLetterSpacing,
-  required FontWeight fontWeight,
-}) {
-  final TextStyle? baseStyle = _editorialContentStyle(
-    context,
-    Theme.of(context).textTheme.labelSmall,
-  );
-
-  return baseStyle?.copyWith(
-    color: color,
-    letterSpacing: context.strings.isKorean
-        ? koreanLetterSpacing
-        : englishLetterSpacing,
-    fontWeight: fontWeight,
-  );
 }
 
 String _formatMonthYear(BuildContext context, DateTime date) {

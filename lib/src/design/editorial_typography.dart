@@ -27,4 +27,31 @@ abstract final class EditorialTypography {
       fontFamilyFallback: sansFallback,
     );
   }
+
+  static TextStyle? contentStyle(TextStyle? style, {required bool isKorean}) {
+    if (style == null) {
+      return null;
+    }
+
+    if (!isKorean) {
+      return style;
+    }
+
+    return withKoreanContent(style);
+  }
+
+  static TextStyle? trackedStyle(
+    TextStyle? style, {
+    required bool isKorean,
+    required Color color,
+    required double englishLetterSpacing,
+    required double koreanLetterSpacing,
+    required FontWeight fontWeight,
+  }) {
+    return contentStyle(style, isKorean: isKorean)?.copyWith(
+      color: color,
+      letterSpacing: isKorean ? koreanLetterSpacing : englishLetterSpacing,
+      fontWeight: fontWeight,
+    );
+  }
 }
