@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 
 import "../../design/editorial_components.dart";
 import "../../design/editorial_tokens.dart";
+import "../../localization/app_strings.dart";
 import "login_components.dart";
 
 class LoginView extends StatelessWidget {
@@ -22,6 +23,8 @@ class LoginView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
+
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         final bool hasBoundedHeight = constraints.hasBoundedHeight;
@@ -42,9 +45,9 @@ class LoginView extends StatelessWidget {
                   children: <Widget>[
                     const PresenceWordmark(),
                     const SizedBox(height: 88),
-                    const LoginHero(
-                      title: "Join the Silence",
-                      subtitle: "Take a breath. Enter your quiet space.",
+                    LoginHero(
+                      title: strings.authHeroTitle,
+                      subtitle: strings.authHeroSubtitle,
                     ),
                     const SizedBox(height: 56),
                     if (isBusy)
@@ -53,12 +56,6 @@ class LoginView extends StatelessWidget {
                           vertical: EditorialSpacing.large,
                         ),
                         child: EditorialInlineLoader(),
-                      )
-                    else if (!googleClientIdConfigured)
-                      const LoginStatusNote(
-                        message:
-                            "GOOGLE_CLIENT_ID is missing. Start Flutter with the correct dart define before testing login.",
-                        color: EditorialColors.error,
                       )
                     else
                       Column(
@@ -77,6 +74,11 @@ class LoginView extends StatelessWidget {
                             ),
                           ),
                         ],
+                      ),
+                    if (!googleClientIdConfigured)
+                      LoginStatusNote(
+                        message: strings.authGoogleClientMissing,
+                        color: EditorialColors.error,
                       ),
                     if (errorMessage case final String message) ...<Widget>[
                       const SizedBox(height: EditorialSpacing.medium),

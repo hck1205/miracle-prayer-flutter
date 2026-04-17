@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../../design/editorial_tokens.dart";
 import "../../feed/feed_models.dart";
 import "../../feed/feed_reaction.dart";
+import "../../localization/app_strings.dart";
 import "feed_styles.dart";
 
 class PrayerReactionButton extends StatefulWidget {
@@ -37,6 +38,7 @@ class _PrayerReactionButtonState extends State<PrayerReactionButton> {
   @override
   Widget build(BuildContext context) {
     const FeedReactionOption primaryOption = FeedReactions.amen;
+    final AppStrings strings = context.strings;
     final bool isAmenSelected =
         widget.selectedReaction == FeedReactionKind.amen;
     final Color primaryColor = isAmenSelected
@@ -74,7 +76,7 @@ class _PrayerReactionButtonState extends State<PrayerReactionButton> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    primaryOption.label,
+                    primaryOption.label(strings),
                     style: FeedStyles.reactionLabel(primaryColor),
                   ),
                 ],
@@ -264,6 +266,7 @@ class _ReactionTrayItemState extends State<_ReactionTrayItem> {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     final bool elevated = _isHovered || widget.isSelected;
 
     return MouseRegion(
@@ -290,7 +293,7 @@ class _ReactionTrayItemState extends State<_ReactionTrayItem> {
                 color: EditorialColors.onSurface,
               ),
               const SizedBox(height: 4),
-              Text(widget.option.label, style: FeedStyles.trayLabel),
+              Text(widget.option.label(strings), style: FeedStyles.trayLabel),
               if (widget.count > 0) ...<Widget>[
                 const SizedBox(height: 2),
                 Text("${widget.count}", style: FeedStyles.trayCount),

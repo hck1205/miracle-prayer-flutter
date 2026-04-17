@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 
 import "../../design/editorial_tokens.dart";
+import "../../localization/app_strings.dart";
+import "../shared/language_toggle.dart";
 
 class FeedTopBar extends StatelessWidget {
   const FeedTopBar({
@@ -24,6 +26,8 @@ class FeedTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
+
     if (isSearchMode) {
       final TextEditingController controller = searchController!;
 
@@ -72,8 +76,8 @@ class FeedTopBar extends StatelessWidget {
                         focusNode: searchFocusNode,
                         onChanged: onSearchChanged,
                         textInputAction: TextInputAction.search,
-                        decoration: const InputDecoration(
-                          hintText: "Search prayers",
+                        decoration: InputDecoration(
+                          hintText: strings.feedSearchPlaceholder,
                           border: InputBorder.none,
                           isCollapsed: true,
                         ),
@@ -116,10 +120,10 @@ class FeedTopBar extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: <Widget>[
-          const Center(
+          Center(
             child: Text(
-              "Prayers",
-              style: TextStyle(
+              strings.feedTitle,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: EditorialColors.onSurface,
@@ -138,12 +142,22 @@ class FeedTopBar extends StatelessWidget {
           ),
           Align(
             alignment: Alignment.centerRight,
-            child: IconButton(
-              icon: const Icon(Icons.menu, size: 20),
-              color: EditorialColors.primary,
-              onPressed: onMenuTap,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const LanguageToggle(compact: true),
+                const SizedBox(width: 6),
+                IconButton(
+                  icon: const Icon(Icons.menu, size: 20),
+                  color: EditorialColors.primary,
+                  onPressed: onMenuTap,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 40,
+                    height: 40,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

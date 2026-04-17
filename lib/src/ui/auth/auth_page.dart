@@ -10,7 +10,9 @@ import "../../auth/auth_session_storage.dart";
 import "../../auth/auth_state.dart";
 import "../../auth/google_identity_service.dart";
 import "../../design/editorial_tokens.dart";
+import "../../localization/app_strings.dart";
 import "../feed/feed_page.dart";
+import "../shared/language_toggle.dart";
 import "login_view.dart";
 
 class AuthPage extends StatefulWidget {
@@ -50,6 +52,7 @@ class _AuthPageState extends State<AuthPage> {
       builder: (BuildContext context, _) {
         final AuthState state = _controller.state;
         final AuthSession? session = state.session;
+        final AppStrings strings = context.strings;
 
         if (session == null) {
           return Scaffold(
@@ -86,13 +89,24 @@ class _AuthPageState extends State<AuthPage> {
                     ),
                   ),
                   SafeArea(
-                    child: LoginView(
-                      isBusy: state.isBusy,
-                      errorMessage: state.errorMessage,
-                      googleClientIdConfigured:
-                          AppConfig.googleClientId.isNotEmpty,
-                      onGoogleSignIn: _controller.signInWithGoogle,
-                      onContinueAsGuest: _showGuestModeNotice,
+                    child: Stack(
+                      children: <Widget>[
+                        LoginView(
+                          isBusy: state.isBusy,
+                          errorMessage: state.errorMessage == null
+                              ? null
+                              : strings.localizeAuthError(state.errorMessage!),
+                          googleClientIdConfigured:
+                              AppConfig.googleClientId.isNotEmpty,
+                          onGoogleSignIn: _controller.signInWithGoogle,
+                          onContinueAsGuest: _showGuestModeNotice,
+                        ),
+                        const Positioned(
+                          top: 20,
+                          right: 24,
+                          child: LanguageToggle(compact: true),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -107,9 +121,11 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   void _showGuestModeNotice() {
+    final AppStrings strings = context.strings;
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Guest mode is not connected yet."),
+      SnackBar(
+        content: Text(strings.authGuestModeUnavailable),
         duration: Duration(seconds: 2),
       ),
     );

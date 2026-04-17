@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 
+import "../../localization/app_strings.dart";
 import "feed_body_preview.dart";
 import "feed_styles.dart";
 
@@ -19,7 +20,6 @@ class ExpandablePrayerBody extends StatefulWidget {
 
 class _ExpandablePrayerBodyState extends State<ExpandablePrayerBody> {
   static const int _collapsedMaxLines = 8;
-  static const String _expandLabel = "Read more";
 
   bool _isExpanded = false;
   bool _isExpandHovered = false;
@@ -40,6 +40,7 @@ class _ExpandablePrayerBodyState extends State<ExpandablePrayerBody> {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     final String collapsedPreview = normalizeFeedPreviewBody(widget.body);
 
     return LayoutBuilder(
@@ -78,7 +79,7 @@ class _ExpandablePrayerBodyState extends State<ExpandablePrayerBody> {
                   behavior: HitTestBehavior.opaque,
                   onTap: () => setState(() => _isExpanded = true),
                   child: Text(
-                    _expandLabel,
+                    strings.feedReadMore,
                     style: FeedStyles.expandAction(hovered: _isExpandHovered),
                   ),
                 ),

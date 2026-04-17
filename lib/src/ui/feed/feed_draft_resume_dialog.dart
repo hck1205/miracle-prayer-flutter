@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 
 import "../../design/editorial_tokens.dart";
+import "../../localization/app_strings.dart";
 
 enum FeedDraftResumeAction { continueWriting, startNew }
 
@@ -9,19 +10,21 @@ Future<FeedDraftResumeAction?> showFeedDraftResumeDialog(BuildContext context) {
     context: context,
     barrierDismissible: false,
     builder: (BuildContext context) {
+      final AppStrings strings = context.strings;
+
       return AlertDialog(
         backgroundColor: EditorialColors.surfaceLowest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          "Saved draft found",
+        title: Text(
+          strings.draftResumeTitle,
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
             color: EditorialColors.onSurface,
           ),
         ),
-        content: const Text(
-          "You already have a prayer draft. Would you like to continue writing it or start a new one?",
+        content: Text(
+          strings.draftResumeBody,
           style: TextStyle(
             fontSize: 15,
             height: 1.6,
@@ -38,7 +41,7 @@ Future<FeedDraftResumeAction?> showFeedDraftResumeDialog(BuildContext context) {
               side: const BorderSide(color: EditorialColors.outlineVariant),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
-            child: const Text("Start New"),
+            child: Text(strings.draftResumeStartNew),
           ),
           FilledButton(
             onPressed: () => Navigator.of(
@@ -49,7 +52,7 @@ Future<FeedDraftResumeAction?> showFeedDraftResumeDialog(BuildContext context) {
               foregroundColor: EditorialColors.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
-            child: const Text("Continue Writing"),
+            child: Text(strings.draftResumeContinue),
           ),
         ],
       );

@@ -2,6 +2,8 @@ import "package:flutter/material.dart";
 
 import "../../auth/auth_models.dart";
 import "../../design/editorial_tokens.dart";
+import "../../localization/app_strings.dart";
+import "../shared/language_toggle.dart";
 
 Future<void> showFeedAccountSheet(
   BuildContext context, {
@@ -15,6 +17,8 @@ Future<void> showFeedAccountSheet(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     builder: (BuildContext context) {
+      final AppStrings strings = context.strings;
+
       return SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
@@ -39,6 +43,11 @@ Future<void> showFeedAccountSheet(
                 ),
               ),
               const SizedBox(height: 20),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: LanguageToggle(compact: true),
+              ),
+              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -47,7 +56,7 @@ Future<void> showFeedAccountSheet(
                     onLogout();
                   },
                   icon: const Icon(Icons.logout, size: 18),
-                  label: const Text("Log out"),
+                  label: Text(strings.authLogout),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: EditorialColors.onSurface,
                     side: const BorderSide(

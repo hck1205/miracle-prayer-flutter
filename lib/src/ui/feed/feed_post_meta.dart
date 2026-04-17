@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 
 import "../../design/editorial_tokens.dart";
 import "../../feed/feed_models.dart";
+import "../../localization/app_strings.dart";
 import "feed_display.dart";
 import "feed_styles.dart";
 
@@ -27,18 +28,19 @@ class FeedPostMetaRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     // Keep card and detail metadata in one widget so action/layout updates stay
     // consistent everywhere a post is shown.
     return Row(
       children: <Widget>[
-        Text(formatFeedAuthorLabel(post), style: FeedStyles.authorLabel),
+        Text(formatFeedAuthorLabel(context, post), style: FeedStyles.authorLabel),
         if (post.isUrgent) ...<Widget>[
           const SizedBox(width: 10),
-          const UrgentBadge(),
+          UrgentBadge(label: strings.urgentBadge),
         ],
         const Spacer(),
         Text(
-          formatFeedPublishedTimeAgo(post.publishedAt),
+          formatFeedPublishedTimeAgo(context, post.publishedAt),
           style: FeedStyles.publishedLabel,
         ),
         if (!post.viewerCanEdit || post.isFavorited) ...<Widget>[
@@ -67,7 +69,9 @@ class FeedPostMetaRow extends StatelessWidget {
 }
 
 class UrgentBadge extends StatelessWidget {
-  const UrgentBadge({super.key});
+  const UrgentBadge({super.key, required this.label});
+
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -80,8 +84,8 @@ class UrgentBadge extends StatelessWidget {
           color: EditorialColors.error.withValues(alpha: 0.24),
         ),
       ),
-      child: const Text(
-        "URGENT",
+      child: Text(
+        label,
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w700,
@@ -105,12 +109,15 @@ class PrayerCardFavoriteButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     final Color iconColor = isFavorited
         ? EditorialColors.onSurface
         : EditorialColors.outline;
 
     return Tooltip(
-      message: isFavorited ? "Remove from saved prayers" : "Save prayer",
+      message: isFavorited
+          ? strings.favoriteTooltipRemove
+          : strings.favoriteTooltipSave,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -173,8 +180,9 @@ class PrayerCardMenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     return PopupMenuButton<String>(
-      tooltip: "Open post menu",
+      tooltip: strings.postMenuTooltip,
       position: PopupMenuPosition.under,
       offset: const Offset(0, 8),
       color: EditorialColors.surfaceLowest,
@@ -212,14 +220,14 @@ class PrayerCardMenuButton extends StatelessWidget {
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: const <Widget>[
-                    Icon(
+                  children: <Widget>[
+                    const Icon(
                       Icons.edit_outlined,
                       size: 16,
                       color: EditorialColors.onSurface,
                     ),
-                    SizedBox(width: 10),
-                    Text("Edit"),
+                    const SizedBox(width: 10),
+                    Text(strings.postMenuEdit),
                   ],
                 ),
               ),
@@ -232,14 +240,14 @@ class PrayerCardMenuButton extends StatelessWidget {
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: const <Widget>[
-                    Icon(
+                  children: <Widget>[
+                    const Icon(
                       Icons.delete_outline,
                       size: 16,
                       color: EditorialColors.primary,
                     ),
-                    SizedBox(width: 10),
-                    Text("Delete"),
+                    const SizedBox(width: 10),
+                    Text(strings.postMenuDelete),
                   ],
                 ),
               ),
@@ -254,14 +262,14 @@ class PrayerCardMenuButton extends StatelessWidget {
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: const <Widget>[
-                    Icon(
+                  children: <Widget>[
+                    const Icon(
                       Icons.flag_outlined,
                       size: 16,
                       color: EditorialColors.error,
                     ),
-                    SizedBox(width: 10),
-                    Text("Report"),
+                    const SizedBox(width: 10),
+                    Text(strings.postMenuReport),
                   ],
                 ),
               ),

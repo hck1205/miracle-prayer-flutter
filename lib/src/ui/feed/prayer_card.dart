@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "expandable_prayer_body.dart";
 import "../../feed/feed_models.dart";
 import "../../feed/feed_reaction.dart";
+import "../../localization/app_strings.dart";
 import "feed_post_meta.dart";
 import "feed_reaction_widgets.dart";
 import "feed_styles.dart";
@@ -29,6 +30,7 @@ class PrayerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     return RepaintBoundary(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,7 +47,7 @@ class PrayerCard extends StatelessWidget {
             cursor: SystemMouseCursors.click,
             child: Semantics(
               button: true,
-              label: "Open prayer details",
+              label: strings.openPrayerDetails,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: onOpenDetail,

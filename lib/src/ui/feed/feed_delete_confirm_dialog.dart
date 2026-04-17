@@ -1,24 +1,27 @@
 import "package:flutter/material.dart";
 
 import "../../design/editorial_tokens.dart";
+import "../../localization/app_strings.dart";
 
 Future<bool> showFeedDeleteConfirmDialog(BuildContext context) async {
   final bool? confirmed = await showDialog<bool>(
     context: context,
     builder: (BuildContext context) {
+      final AppStrings strings = context.strings;
+
       return AlertDialog(
         backgroundColor: EditorialColors.surfaceLowest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          "Delete this prayer?",
+        title: Text(
+          strings.deleteDialogTitle,
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
             color: EditorialColors.onSurface,
           ),
         ),
-        content: const Text(
-          "This prayer will be removed from the feed. This action cannot be undone.",
+        content: Text(
+          strings.deleteDialogBody,
           style: TextStyle(
             fontSize: 15,
             height: 1.6,
@@ -34,7 +37,7 @@ Future<bool> showFeedDeleteConfirmDialog(BuildContext context) async {
               side: const BorderSide(color: EditorialColors.outlineVariant),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
-            child: const Text("Cancel"),
+            child: Text(strings.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -43,7 +46,7 @@ Future<bool> showFeedDeleteConfirmDialog(BuildContext context) async {
               foregroundColor: EditorialColors.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
-            child: const Text("Delete"),
+            child: Text(strings.delete),
           ),
         ],
       );

@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 
 import "../../design/editorial_tokens.dart";
 import "../../feed/feed_report.dart";
+import "../../localization/app_strings.dart";
 
 Future<FeedReportSubmission?> showFeedReportDialog(BuildContext context) {
   FeedReportReason? selectedReason;
@@ -10,6 +11,8 @@ Future<FeedReportSubmission?> showFeedReportDialog(BuildContext context) {
   return showDialog<FeedReportSubmission>(
     context: context,
     builder: (BuildContext context) {
+      final AppStrings strings = context.strings;
+
       return StatefulBuilder(
         builder: (BuildContext context, StateSetter setState) {
           final bool requiresDetails = selectedReason == FeedReportReason.other;
@@ -22,8 +25,8 @@ Future<FeedReportSubmission?> showFeedReportDialog(BuildContext context) {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
-            title: const Text(
-              "Report this prayer",
+            title: Text(
+              strings.reportDialogTitle,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -36,8 +39,8 @@ Future<FeedReportSubmission?> showFeedReportDialog(BuildContext context) {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  const Text(
-                    "Choose the reason that best fits this post.",
+                  Text(
+                    strings.reportDialogBody,
                     style: TextStyle(
                       fontSize: 15,
                       height: 1.6,
@@ -101,7 +104,7 @@ Future<FeedReportSubmission?> showFeedReportDialog(BuildContext context) {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: <Widget>[
                                     Text(
-                                      reason.title,
+                                      reason.title(strings),
                                       style: const TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
@@ -110,7 +113,7 @@ Future<FeedReportSubmission?> showFeedReportDialog(BuildContext context) {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      reason.description,
+                                      reason.description(strings),
                                       style: const TextStyle(
                                         fontSize: 13,
                                         height: 1.5,
@@ -133,7 +136,7 @@ Future<FeedReportSubmission?> showFeedReportDialog(BuildContext context) {
                       maxLines: 4,
                       onChanged: (_) => setState(() {}),
                       decoration: InputDecoration(
-                        hintText: "Please tell us what happened.",
+                        hintText: strings.reportDialogHint,
                         filled: true,
                         fillColor: EditorialColors.surfaceLow,
                         border: OutlineInputBorder(
@@ -176,7 +179,7 @@ Future<FeedReportSubmission?> showFeedReportDialog(BuildContext context) {
                     vertical: 10,
                   ),
                 ),
-                child: const Text("Cancel"),
+                child: Text(strings.cancel),
               ),
               FilledButton(
                 onPressed: !canSubmit
@@ -195,7 +198,7 @@ Future<FeedReportSubmission?> showFeedReportDialog(BuildContext context) {
                     vertical: 10,
                   ),
                 ),
-                child: const Text("Submit report"),
+                child: Text(strings.reportSubmit),
               ),
             ],
           );

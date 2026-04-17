@@ -1,3 +1,7 @@
+const String authBackendRequestFailedCode = "auth.backend_request_failed";
+const String authGoogleInitFailedCode = "auth.google_init_failed";
+const String authGoogleCanceledCode = "auth.google_canceled";
+
 bool isCanceledGoogleSignInError(Object error) {
   final String rawMessage = error.toString();
 
@@ -10,15 +14,15 @@ String mapAuthErrorMessage(Object error) {
   final String rawMessage = error.toString().replaceFirst("Exception: ", "");
 
   if (rawMessage.contains("XMLHttpRequest error")) {
-    return "Backend request failed. Make sure miracle-prayer-backend is running.";
+    return authBackendRequestFailedCode;
   }
 
   if (rawMessage.contains("not initialized")) {
-    return "Google sign-in could not initialize. Check GOOGLE_CLIENT_ID.";
+    return authGoogleInitFailedCode;
   }
 
   if (isCanceledGoogleSignInError(error)) {
-    return "Google sign-in was canceled.";
+    return authGoogleCanceledCode;
   }
 
   return rawMessage;

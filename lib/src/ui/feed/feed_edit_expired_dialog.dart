@@ -1,24 +1,27 @@
 import "package:flutter/material.dart";
 
 import "../../design/editorial_tokens.dart";
+import "../../localization/app_strings.dart";
 
 Future<void> showFeedEditExpiredDialog(BuildContext context) {
   return showDialog<void>(
     context: context,
     builder: (BuildContext context) {
+      final AppStrings strings = context.strings;
+
       return AlertDialog(
         backgroundColor: EditorialColors.surfaceLowest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          "Editing unavailable",
+        title: Text(
+          strings.editExpiredTitle,
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
             color: EditorialColors.onSurface,
           ),
         ),
-        content: const Text(
-          "This prayer can only be edited within 1 hour of posting.",
+        content: Text(
+          strings.editExpiredBody,
           style: TextStyle(
             fontSize: 15,
             height: 1.6,
@@ -34,7 +37,7 @@ Future<void> showFeedEditExpiredDialog(BuildContext context) {
               foregroundColor: EditorialColors.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
-            child: const Text("OK"),
+            child: Text(strings.ok),
           ),
         ],
       );

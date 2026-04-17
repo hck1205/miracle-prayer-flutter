@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 
 import "../../design/editorial_components.dart";
 import "../../design/editorial_tokens.dart";
+import "../../localization/app_strings.dart";
 import "feed_styles.dart";
 
 class FeedFooter extends StatelessWidget {
@@ -9,11 +10,13 @@ class FeedFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    final AppStrings strings = context.strings;
+
+    return Column(
       children: <Widget>[
-        EditorialDivider(),
-        SizedBox(height: 16),
-        Text("PEACE BE WITH YOU", style: FeedStyles.footerLabel),
+        const EditorialDivider(),
+        const SizedBox(height: 16),
+        Text(strings.feedFooter, style: FeedStyles.footerLabel),
       ],
     );
   }
@@ -50,10 +53,16 @@ class FeedBottomBar extends StatelessWidget {
               onTap: () => onSelected(1),
             ),
             BottomNavItem(
-              icon: Icons.bookmark_border_rounded,
-              selectedIcon: Icons.bookmark_rounded,
+              icon: Icons.auto_stories_outlined,
+              selectedIcon: Icons.auto_stories_rounded,
               selected: selectedIndex == 2,
               onTap: () => onSelected(2),
+            ),
+            BottomNavItem(
+              icon: Icons.bookmark_border_rounded,
+              selectedIcon: Icons.bookmark_rounded,
+              selected: selectedIndex == 3,
+              onTap: () => onSelected(3),
             ),
           ],
         ),

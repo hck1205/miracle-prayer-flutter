@@ -6,6 +6,7 @@ import "../../design/editorial_tokens.dart";
 import "../../feed/feed_models.dart";
 import "../../feed/feed_reaction.dart";
 import "../../feed/feed_state.dart";
+import "../../localization/app_strings.dart";
 import "feed_body_preview.dart";
 import "feed_display.dart";
 import "feed_styles.dart";
@@ -53,6 +54,7 @@ class FeedView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     final FeedState? urgentState = this.urgentState;
     final bool showUrgentSection =
         urgentState != null &&
@@ -207,12 +209,12 @@ class FeedView extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 12),
                         child: Align(
                           alignment: Alignment.center,
-                          child: TextButton(
-                            onPressed: onLoadMore,
-                            child: const Text("Load more"),
+                            child: TextButton(
+                              onPressed: onLoadMore,
+                              child: Text(strings.loadMore),
+                            ),
                           ),
                         ),
-                      ),
                     ),
                   ),
                 const SliverToBoxAdapter(child: SizedBox(height: 20)),
@@ -245,6 +247,7 @@ class _UrgentPrayerSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     final FeedState? state = this.state;
     if (state == null) {
       return const SizedBox.shrink();
@@ -254,7 +257,7 @@ class _UrgentPrayerSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
-          "Urgent prayers",
+          strings.urgentSectionTitle,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
             color: EditorialColors.onSurface,
@@ -262,7 +265,7 @@ class _UrgentPrayerSection extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          "The five most recent urgent prayer requests.",
+          strings.urgentSectionBody,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             height: 1.6,
             color: EditorialColors.onSurfaceMuted,
@@ -422,7 +425,7 @@ class _UrgentPrayerCard extends StatelessWidget {
                   children: <Widget>[
                     const Spacer(),
                     Text(
-                      formatFeedPublishedTimeAgo(post.publishedAt),
+                      formatFeedPublishedTimeAgo(context, post.publishedAt),
                       style: FeedStyles.publishedLabel,
                     ),
                   ],
@@ -444,7 +447,7 @@ class _UrgentPrayerCard extends StatelessWidget {
                 Row(
                   children: <Widget>[
                     Text(
-                      formatFeedAuthorLabel(post),
+                      formatFeedAuthorLabel(context, post),
                       style: FeedStyles.authorLabel,
                     ),
                   ],
@@ -485,6 +488,7 @@ class _UrgentPrayerError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -504,7 +508,7 @@ class _UrgentPrayerError extends StatelessWidget {
           ),
           if (onRetry != null) ...<Widget>[
             const SizedBox(height: 14),
-            EditorialSecondaryButton(label: "Try again", onPressed: onRetry),
+            EditorialSecondaryButton(label: strings.tryAgain, onPressed: onRetry),
           ],
         ],
       ),
@@ -546,6 +550,7 @@ class _FeedErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 36),
       child: Column(
@@ -555,7 +560,7 @@ class _FeedErrorState extends StatelessWidget {
             color: EditorialColors.primary,
           ),
           const SizedBox(height: 18),
-          EditorialSecondaryButton(label: "Try again", onPressed: onRetry),
+          EditorialSecondaryButton(label: strings.tryAgain, onPressed: onRetry),
         ],
       ),
     );

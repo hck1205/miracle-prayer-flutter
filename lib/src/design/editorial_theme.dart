@@ -19,71 +19,78 @@ abstract final class EditorialTheme {
 
     final TextTheme textTheme = _withFallbackTextTheme(
       const TextTheme(
-      displayLarge: TextStyle(
-        fontSize: 40,
-        height: 1.05,
-        letterSpacing: -0.8,
-        fontWeight: FontWeight.w600,
-        color: EditorialColors.onSurface,
+        displayLarge: TextStyle(
+          fontSize: 40,
+          height: 1.05,
+          letterSpacing: -0.8,
+          fontWeight: FontWeight.w600,
+          color: EditorialColors.onSurface,
+        ),
+        displayMedium: TextStyle(
+          fontSize: 32,
+          height: 1.1,
+          letterSpacing: -0.64,
+          fontWeight: FontWeight.w600,
+          color: EditorialColors.onSurface,
+        ),
+        headlineLarge: TextStyle(
+          fontSize: 32,
+          height: 1.12,
+          letterSpacing: -0.64,
+          fontWeight: FontWeight.w600,
+          color: EditorialColors.onSurface,
+        ),
+        headlineMedium: TextStyle(
+          fontSize: 28,
+          height: 1.18,
+          letterSpacing: -0.56,
+          fontWeight: FontWeight.w600,
+          color: EditorialColors.onSurface,
+        ),
+        titleLarge: TextStyle(
+          fontSize: 20,
+          height: 1.35,
+          fontWeight: FontWeight.w600,
+          color: EditorialColors.onSurface,
+        ),
+        titleMedium: TextStyle(
+          fontSize: 16,
+          height: 1.5,
+          fontWeight: FontWeight.w500,
+          color: EditorialColors.onSurface,
+        ),
+        bodyLarge: TextStyle(
+          fontSize: 16,
+          height: 1.75,
+          color: EditorialColors.onSurface,
+        ),
+        bodyMedium: TextStyle(
+          fontSize: 14,
+          height: 1.65,
+          color: EditorialColors.onSurfaceMuted,
+        ),
+        labelLarge: TextStyle(
+          fontSize: 12,
+          height: 1.4,
+          letterSpacing: 1.2,
+          fontWeight: FontWeight.w600,
+          color: EditorialColors.onSurfaceMuted,
+        ),
+        labelMedium: TextStyle(
+          fontSize: 12,
+          height: 1.4,
+          letterSpacing: 1.2,
+          fontWeight: FontWeight.w600,
+          color: EditorialColors.onSurfaceMuted,
+        ),
+        labelSmall: TextStyle(
+          fontSize: 11,
+          height: 1.35,
+          letterSpacing: 1.0,
+          fontWeight: FontWeight.w600,
+          color: EditorialColors.onSurfaceMuted,
+        ),
       ),
-      displayMedium: TextStyle(
-        fontSize: 32,
-        height: 1.1,
-        letterSpacing: -0.64,
-        fontWeight: FontWeight.w600,
-        color: EditorialColors.onSurface,
-      ),
-      headlineLarge: TextStyle(
-        fontSize: 32,
-        height: 1.12,
-        letterSpacing: -0.64,
-        fontWeight: FontWeight.w600,
-        color: EditorialColors.onSurface,
-      ),
-      headlineMedium: TextStyle(
-        fontSize: 28,
-        height: 1.18,
-        letterSpacing: -0.56,
-        fontWeight: FontWeight.w600,
-        color: EditorialColors.onSurface,
-      ),
-      titleLarge: TextStyle(
-        fontSize: 20,
-        height: 1.35,
-        fontWeight: FontWeight.w600,
-        color: EditorialColors.onSurface,
-      ),
-      titleMedium: TextStyle(
-        fontSize: 16,
-        height: 1.5,
-        fontWeight: FontWeight.w500,
-        color: EditorialColors.onSurface,
-      ),
-      bodyLarge: TextStyle(
-        fontSize: 16,
-        height: 1.75,
-        color: EditorialColors.onSurface,
-      ),
-      bodyMedium: TextStyle(
-        fontSize: 14,
-        height: 1.65,
-        color: EditorialColors.onSurfaceMuted,
-      ),
-      labelLarge: TextStyle(
-        fontSize: 12,
-        height: 1.4,
-        letterSpacing: 1.2,
-        fontWeight: FontWeight.w600,
-        color: EditorialColors.onSurfaceMuted,
-      ),
-      labelMedium: TextStyle(
-        fontSize: 12,
-        height: 1.4,
-        letterSpacing: 1.2,
-        fontWeight: FontWeight.w600,
-        color: EditorialColors.onSurfaceMuted,
-      ),
-    ),
     );
 
     return ThemeData(
@@ -168,7 +175,9 @@ abstract final class EditorialTheme {
           ),
           borderRadius: BorderRadius.circular(EditorialRadius.large),
         ),
-        errorStyle: textTheme.bodyMedium?.copyWith(color: EditorialColors.error),
+        errorStyle: textTheme.bodyMedium?.copyWith(
+          color: EditorialColors.error,
+        ),
       ),
     );
   }

@@ -6,6 +6,7 @@ import "../../app_config.dart";
 import "../../auth/auth_models.dart";
 import "../../feed/feed_api_client.dart";
 import "../../feed/feed_controller.dart";
+import "../../personal_prayer/personal_prayer_controller.dart";
 import "feed_screen.dart";
 
 class FeedPageShell extends StatefulWidget {
@@ -24,6 +25,7 @@ class FeedPageShell extends StatefulWidget {
 
 class _FeedPageState extends State<FeedPageShell> {
   late final FeedController _controller;
+  late final PersonalPrayerController _personalPrayerController;
 
   @override
   void initState() {
@@ -34,12 +36,16 @@ class _FeedPageState extends State<FeedPageShell> {
       feedApiClient: FeedApiClient(baseUrl: AppConfig.normalizedBackendBaseUrl),
       accessToken: widget.session.accessToken,
     );
+    _personalPrayerController = PersonalPrayerController(
+      userId: widget.session.user.id,
+    );
     unawaited(_controller.bootstrap());
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _personalPrayerController.dispose();
     super.dispose();
   }
 
@@ -49,6 +55,7 @@ class _FeedPageState extends State<FeedPageShell> {
       session: widget.session,
       onLogout: widget.onLogout,
       controller: _controller,
+      personalPrayerController: _personalPrayerController,
     );
   }
 }

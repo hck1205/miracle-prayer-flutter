@@ -1,3 +1,5 @@
+import "../localization/app_strings.dart";
+
 enum FeedReportReason {
   notPrayer,
   abusiveOrHarassing,
@@ -22,25 +24,25 @@ extension FeedReportReasonValues on FeedReportReason {
     };
   }
 
-  String get title {
+  String title(AppStrings strings) {
     return switch (this) {
-      FeedReportReason.notPrayer => "Not a prayer",
-      FeedReportReason.abusiveOrHarassing => "Abusive or hateful",
-      FeedReportReason.promotionalOrOffTopic => "Promotional or unrelated",
-      FeedReportReason.other => "Other",
+      FeedReportReason.notPrayer => strings.reportReasonNotPrayerTitle(),
+      FeedReportReason.abusiveOrHarassing => strings.reportReasonAbusiveTitle(),
+      FeedReportReason.promotionalOrOffTopic =>
+        strings.reportReasonPromotionalTitle(),
+      FeedReportReason.other => strings.reportReasonOtherTitle(),
     };
   }
 
-  String get description {
+  String description(AppStrings strings) {
     return switch (this) {
       FeedReportReason.notPrayer =>
-        "Posts that are not actually prayer requests or prayer content.",
+        strings.reportReasonNotPrayerDescription(),
       FeedReportReason.abusiveOrHarassing =>
-        "Profanity, personal attacks, defamation, harassment, or hateful content.",
+        strings.reportReasonAbusiveDescription(),
       FeedReportReason.promotionalOrOffTopic =>
-        "Advertisements, spam, or posts that do not fit the purpose of this app.",
-      FeedReportReason.other =>
-        "Anything else that should be reviewed. Please provide details.",
+        strings.reportReasonPromotionalDescription(),
+      FeedReportReason.other => strings.reportReasonOtherDescription(),
     };
   }
 }

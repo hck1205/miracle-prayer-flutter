@@ -11,6 +11,8 @@ import "../../feed/feed_error_message.dart";
 import "../../feed/feed_models.dart";
 import "../../feed/feed_report.dart";
 import "../../feed/feed_reaction.dart";
+import "../../localization/app_strings.dart";
+import "../../personal_prayer/personal_prayer_controller.dart";
 import "feed_account_sheet.dart";
 import "feed_bottom_bar.dart";
 import "feed_create_view.dart";
@@ -24,6 +26,7 @@ import "feed_report_dialog.dart";
 import "feed_scroll_pagination.dart";
 import "feed_top_bar.dart";
 import "feed_view.dart";
+import "../personal_prayer/personal_prayer_screen.dart";
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({
@@ -31,11 +34,13 @@ class FeedScreen extends StatefulWidget {
     required this.session,
     required this.onLogout,
     required this.controller,
+    required this.personalPrayerController,
   });
 
   final AuthSession session;
   final VoidCallback onLogout;
   final FeedController controller;
+  final PersonalPrayerController personalPrayerController;
 
   @override
   State<FeedScreen> createState() => _FeedScreenState();
@@ -73,6 +78,8 @@ class _FeedScreenState extends State<FeedScreen> {
   bool _composerBaselineUrgent = false;
   Timer? _searchDebounce;
   String _pendingSearchQuery = "";
+
+  AppStrings get strings => context.strings;
 
   @override
   void initState() {
@@ -174,7 +181,7 @@ class _FeedScreenState extends State<FeedScreen> {
     if (index == _selectedTabIndex) {
       if (index == 0) {
         unawaited(_controller.refreshFeed());
-      } else if (index == 2) {
+      } else if (index == 3) {
         unawaited(_controller.refreshFavorites());
       }
       return;
@@ -207,7 +214,7 @@ class _FeedScreenState extends State<FeedScreen> {
 
     if (index == 1) {
       unawaited(_prepareCreateComposerEntry());
-    } else if (index == 2) {
+    } else if (index == 3) {
       unawaited(_controller.bootstrapFavorites());
     }
   }
@@ -227,9 +234,7 @@ class _FeedScreenState extends State<FeedScreen> {
       }
 
       _showNotice(
-        isFavorited
-            ? "Saved to your favorites."
-            : "Removed from your favorites.",
+        isFavorited ? strings.favoriteSaved : strings.favoriteRemoved,
         duration: const Duration(milliseconds: 1400),
       );
 
@@ -240,11 +245,11 @@ class _FeedScreenState extends State<FeedScreen> {
       }
 
       if (willFavorite) {
-        _showNotice(mapFeedErrorMessage(error));
+        _showNotice(strings.localizeFeedError(mapFeedErrorMessage(error)));
         rethrow;
       }
 
-      _showNotice(mapFeedErrorMessage(error));
+      _showNotice(strings.localizeFeedError(mapFeedErrorMessage(error)));
       rethrow;
     }
   }
@@ -290,7 +295,7 @@ class _FeedScreenState extends State<FeedScreen> {
         return false;
       }
 
-      _showNotice("Prayer deleted.");
+      _showNotice(strings.feedDeleted);
       return true;
     } catch (error) {
       if (!mounted) {
@@ -303,7 +308,7 @@ class _FeedScreenState extends State<FeedScreen> {
         return false;
       }
 
-      _showNotice(mapFeedErrorMessage(error));
+      _showNotice(strings.localizeFeedError(mapFeedErrorMessage(error)));
       return false;
     }
   }
@@ -323,13 +328,13 @@ class _FeedScreenState extends State<FeedScreen> {
         return;
       }
 
-      _showNotice("Report submitted. Thank you.");
+      _showNotice(strings.feedReportSubmitted);
     } catch (error) {
       if (!mounted) {
         return;
       }
 
-      _showNotice(mapFeedErrorMessage(error));
+      _showNotice(strings.localizeFeedError(mapFeedErrorMessage(error)));
     }
   }
 
@@ -379,26 +384,26 @@ class _FeedScreenState extends State<FeedScreen> {
           onDelete: (FeedPost post) => unawaited(_handleDeleteSelected(post)),
           onReport: (FeedPost post) => unawaited(_handleReportSelected(post)),
           headerTitle: inputQuery.isEmpty
-              ? "Search prayers."
+              ? strings.searchHeaderIdleTitle
               : isQueryTooShort
-              ? "Keep typing."
-              : "Search results.",
+              ? strings.searchHeaderShortTitle
+              : strings.searchHeaderResultsTitle,
           headerBody: inputQuery.isEmpty
-              ? "Search the community feed by words, topics,\nor short phrases."
+              ? strings.searchHeaderIdleBody
               : isQueryTooShort
-              ? "Enter at least 2 characters before we search the feed."
-              : "Showing prayers that mention \"$query\".",
-          loadingMessage: "Searching prayers...",
+              ? strings.searchHeaderShortBody
+              : strings.searchHeaderResultsBody(query),
+          loadingMessage: strings.searchLoading,
           emptyTitle: inputQuery.isEmpty
-              ? "Start typing to search."
+              ? strings.searchEmptyIdleTitle
               : isQueryTooShort
-              ? "Type 2 or more characters."
-              : "No matching prayers found.",
+              ? strings.searchEmptyShortTitle
+              : strings.searchEmptyResultsTitle,
           emptyBody: inputQuery.isEmpty
-              ? "Try words like hope, healing, family, or peace."
+              ? strings.searchEmptyIdleBody
               : isQueryTooShort
-              ? "Short queries create noisy results, so search starts at 2 characters."
-              : "Try a shorter phrase or different keywords.",
+              ? strings.searchEmptyShortBody
+              : strings.searchEmptyResultsBody,
         );
       },
     );
@@ -408,7 +413,9 @@ class _FeedScreenState extends State<FeedScreen> {
     switch (_selectedTabIndex) {
       case 1:
         return FeedCreateView(
-          title: _editingPost == null ? "Write a Prayer" : "Edit Prayer",
+          title: _editingPost == null
+              ? strings.composerWriteTitle
+              : strings.composerEditTitle,
           identityLabel: widget.session.user.name ?? widget.session.user.email,
           bodyController: _composerController,
           isAnonymous: _postAnonymously,
@@ -427,17 +434,18 @@ class _FeedScreenState extends State<FeedScreen> {
               _postAsUrgent = value;
             });
           },
-          primaryActionLabel: _editingPost == null ? "SHARE" : "UPDATE",
+          primaryActionLabel: _editingPost == null
+              ? strings.composerShare
+              : strings.composerUpdate,
           onPrimaryAction: () =>
               _editingPost == null ? _submitComposer() : _submitEditComposer(),
-          secondaryActionLabel: "Cancel",
+          secondaryActionLabel: strings.composerCancel,
           onSecondaryAction: () =>
               _editingPost == null ? _handleCreateCancel() : _exitComposer(),
-          onTagTap: () => _showNotice("Tagging is not connected yet."),
-          onQuoteTap: () =>
-              _showNotice("Quote templates are not connected yet."),
+          onTagTap: () => _showNotice(strings.composerTagUnavailable),
+          onQuoteTap: () => _showNotice(strings.composerQuoteUnavailable),
         );
-      case 2:
+      case 3:
         return AnimatedBuilder(
           animation: _controller,
           builder: (BuildContext context, _) {
@@ -455,15 +463,18 @@ class _FeedScreenState extends State<FeedScreen> {
                   unawaited(_handleDeleteSelected(post)),
               onReport: (FeedPost post) =>
                   unawaited(_handleReportSelected(post)),
-              headerTitle: "Saved prayers.",
-              headerBody:
-                  "Keep the prayers that stayed with you close.\nReturn here whenever you want to revisit them.",
-              loadingMessage: "Loading saved prayers...",
-              emptyTitle: "No saved prayers yet.",
-              emptyBody:
-                  "When a prayer stays with you, tap the bookmark and it will appear here.",
+              headerTitle: strings.savedHeaderTitle,
+              headerBody: strings.savedHeaderBody,
+              loadingMessage: strings.savedLoading,
+              emptyTitle: strings.savedEmptyTitle,
+              emptyBody: strings.savedEmptyBody,
             );
           },
+        );
+      case 2:
+        return PersonalPrayerScreen(
+          controller: widget.personalPrayerController,
+          displayName: widget.session.user.name ?? widget.session.user.email,
         );
       case 0:
       default:
@@ -488,13 +499,11 @@ class _FeedScreenState extends State<FeedScreen> {
                   unawaited(_handleDeleteSelected(post)),
               onReport: (FeedPost post) =>
                   unawaited(_handleReportSelected(post)),
-              headerTitle: "A collective breath.",
-              headerBody:
-                  "Join a silent community of voices.\nShare your burdens, find solace in the\nshared spirit of hope.",
-              loadingMessage: "Loading prayers...",
-              emptyTitle: "No prayers yet.",
-              emptyBody:
-                  "The feed will appear here once stories begin to gather.",
+              headerTitle: strings.feedHeaderTitle,
+              headerBody: strings.feedHeaderBody,
+              loadingMessage: strings.feedLoading,
+              emptyTitle: strings.feedEmptyTitle,
+              emptyBody: strings.feedEmptyBody,
             );
           },
         );
@@ -579,7 +588,7 @@ class _FeedScreenState extends State<FeedScreen> {
     final FeedPostType? type = _postAsUrgent ? FeedPostType.urgent : null;
 
     if (body.isEmpty) {
-      _showNotice("Write your prayer before continuing.");
+      _showNotice(strings.composerEmpty);
       return;
     }
 
@@ -622,7 +631,7 @@ class _FeedScreenState extends State<FeedScreen> {
       _cacheLatestDraft(null);
       _resetComposerState(nextTabIndex: 0);
       await _controller.refreshFeed();
-      _showNotice("Prayer shared.");
+      _showNotice(strings.feedShared);
     } catch (error) {
       if (!mounted) {
         return;
@@ -631,7 +640,7 @@ class _FeedScreenState extends State<FeedScreen> {
       setState(() {
         _isSubmittingComposer = false;
       });
-      _showNotice(mapFeedErrorMessage(error));
+      _showNotice(strings.localizeFeedError(mapFeedErrorMessage(error)));
     }
   }
 
@@ -640,12 +649,12 @@ class _FeedScreenState extends State<FeedScreen> {
     final String body = _composerController.text.trim();
 
     if (editingPost == null) {
-      _showNotice("There is no post selected for editing.");
+      _showNotice(strings.composerMissingEditTarget);
       return;
     }
 
     if (body.isEmpty) {
-      _showNotice("Write your prayer before continuing.");
+      _showNotice(strings.composerEmpty);
       return;
     }
 
@@ -678,7 +687,7 @@ class _FeedScreenState extends State<FeedScreen> {
 
       _resetComposerState(nextTabIndex: 0);
       await _controller.refreshFeed();
-      _showNotice("Prayer updated.");
+      _showNotice(strings.feedUpdated);
     } catch (error) {
       if (!mounted) {
         return;
@@ -687,7 +696,7 @@ class _FeedScreenState extends State<FeedScreen> {
       setState(() {
         _isSubmittingComposer = false;
       });
-      _showNotice(mapFeedErrorMessage(error));
+      _showNotice(strings.localizeFeedError(mapFeedErrorMessage(error)));
     }
   }
 
@@ -760,7 +769,7 @@ class _FeedScreenState extends State<FeedScreen> {
       }
 
       _resetComposerState(nextTabIndex: nextTabIndex);
-      _showNotice("Draft saved.", duration: const Duration(milliseconds: 1400));
+      _showNotice(strings.draftSaved, duration: const Duration(milliseconds: 1400));
     } catch (error) {
       if (!mounted) {
         return;
@@ -769,7 +778,7 @@ class _FeedScreenState extends State<FeedScreen> {
       setState(() {
         _isSubmittingComposer = false;
       });
-      _showNotice(mapFeedErrorMessage(error));
+      _showNotice(strings.localizeFeedError(mapFeedErrorMessage(error)));
     }
   }
 
@@ -822,10 +831,10 @@ class _FeedScreenState extends State<FeedScreen> {
       if (action == FeedDraftResumeAction.startNew) {
         try {
           await _controller.discardDraft(latestDraft.id);
-          _cacheLatestDraft(null);
+            _cacheLatestDraft(null);
         } catch (error) {
           if (mounted) {
-            _showNotice(mapFeedErrorMessage(error));
+            _showNotice(strings.localizeFeedError(mapFeedErrorMessage(error)));
           }
         }
 
@@ -837,7 +846,7 @@ class _FeedScreenState extends State<FeedScreen> {
       }
     } catch (error) {
       if (mounted) {
-        _showNotice(mapFeedErrorMessage(error));
+        _showNotice(strings.localizeFeedError(mapFeedErrorMessage(error)));
       }
     } finally {
       _isCheckingDraftEntry = false;
@@ -945,7 +954,7 @@ class _FeedScreenState extends State<FeedScreen> {
       setState(() {
         _isLoadingUrgentEligibility = false;
       });
-      _showNotice(mapFeedErrorMessage(error));
+      _showNotice(strings.localizeFeedError(mapFeedErrorMessage(error)));
     }
   }
 
@@ -980,26 +989,32 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   String get _urgentHelperText {
+    final AppStrings strings = context.strings;
     final FeedUrgentEligibility? eligibility = _urgentEligibility;
     if (_isLoadingUrgentEligibility) {
-      return "Checking your urgent prayer availability...";
+      return strings.urgentLoading;
     }
 
     if (eligibility == null) {
-      return "Urgent prayers are limited by a cooldown window.";
+      return strings.urgentDefault;
     }
 
     if (eligibility.canUseUrgent) {
-      return "Use this for time-sensitive prayer requests. One urgent prayer every ${_formatUrgentCooldown(eligibility.cooldownSeconds)}.";
+      return strings.urgentEnabled(
+        _formatUrgentCooldown(eligibility.cooldownSeconds),
+      );
     }
 
     return _urgentUnavailableNotice(eligibility);
   }
 
   String _urgentUnavailableNotice(FeedUrgentEligibility eligibility) {
+    final AppStrings strings = context.strings;
     final DateTime? nextAvailableAt = eligibility.nextAvailableAt?.toLocal();
     if (nextAvailableAt == null) {
-      return "Urgent prayers are limited to one per ${_formatUrgentCooldown(eligibility.cooldownSeconds)}.";
+      return strings.urgentCooldownOnly(
+        _formatUrgentCooldown(eligibility.cooldownSeconds),
+      );
     }
 
     final MaterialLocalizations localizations = MaterialLocalizations.of(
@@ -1009,29 +1024,11 @@ class _FeedScreenState extends State<FeedScreen> {
     final String timeLabel = localizations.formatTimeOfDay(
       TimeOfDay.fromDateTime(nextAvailableAt),
     );
-    return "Urgent will be available again on $dateLabel at $timeLabel.";
+    return strings.urgentAvailableAgain(date: dateLabel, time: timeLabel);
   }
 
   String _formatUrgentCooldown(int cooldownSeconds) {
-    const int secondsPerDay = 24 * 60 * 60;
-    const int secondsPerHour = 60 * 60;
-
-    if (cooldownSeconds % secondsPerDay == 0) {
-      final int days = cooldownSeconds ~/ secondsPerDay;
-      return days == 1 ? "1 day" : "$days days";
-    }
-
-    if (cooldownSeconds % secondsPerHour == 0) {
-      final int hours = cooldownSeconds ~/ secondsPerHour;
-      return hours == 1 ? "1 hour" : "$hours hours";
-    }
-
-    if (cooldownSeconds % 60 == 0) {
-      final int minutes = cooldownSeconds ~/ 60;
-      return minutes == 1 ? "1 minute" : "$minutes minutes";
-    }
-
-    return cooldownSeconds == 1 ? "1 second" : "$cooldownSeconds seconds";
+    return context.strings.formatDuration(cooldownSeconds);
   }
 
   void _showNotice(String message, {Duration? duration}) {

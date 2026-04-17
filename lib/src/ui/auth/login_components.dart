@@ -4,6 +4,7 @@ import "package:flutter_svg/flutter_svg.dart";
 
 import "../../design/editorial_components.dart";
 import "../../design/editorial_tokens.dart";
+import "../../localization/app_strings.dart";
 import "google_sign_in_button.dart";
 
 const String _googleLogoSvg = '''
@@ -77,6 +78,8 @@ class GoogleLoginButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
+
     if (kIsWeb) {
       return const GoogleWebSignInButton();
     }
@@ -84,7 +87,7 @@ class GoogleLoginButton extends StatelessWidget {
     return _GoogleButtonShell(
       child: Semantics(
         button: true,
-        label: "Sign in with Google",
+        label: strings.authSignInWithGoogle,
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -104,7 +107,7 @@ class GoogleLoginButton extends StatelessWidget {
 
               return null;
             }),
-            child: const SizedBox(
+            child: SizedBox(
               height: 40,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12),
@@ -112,13 +115,13 @@ class GoogleLoginButton extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.max,
                   children: <Widget>[
-                    SizedBox(width: 20, height: 20, child: _GoogleGlyph()),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 20, height: 20, child: _GoogleGlyph()),
+                    const SizedBox(width: 10),
                     Flexible(
                       child: Text(
-                        "Sign in with Google",
+                        strings.authSignInWithGoogle,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Color(0xFF1F1F1F),
                           fontFamily: "Roboto",
                           fontSize: 14,
@@ -176,13 +179,15 @@ class GuestLoginButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
+
     return _GuestButtonShell(
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(6),
           onTap: onPressed,
-          child: const SizedBox(
+          child: SizedBox(
             height: 40,
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 12),
@@ -190,8 +195,8 @@ class GuestLoginButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Text(
-                    "Continue as Guest",
-                    style: TextStyle(
+                    strings.authContinueAsGuest,
+                    style: const TextStyle(
                       fontSize: 14,
                       height: 20 / 14,
                       fontWeight: FontWeight.w500,
@@ -271,6 +276,8 @@ class LoginOrDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
+
     return Row(
       children: <Widget>[
         const Expanded(
@@ -285,7 +292,7 @@ class LoginOrDivider extends StatelessWidget {
             horizontal: EditorialSpacing.small,
           ),
           child: Text(
-            "OR",
+            strings.authOr,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: EditorialColors.onSurfaceMuted,
               letterSpacing: 1.4,

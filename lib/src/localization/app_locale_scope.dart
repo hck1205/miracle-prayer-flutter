@@ -1,0 +1,23 @@
+import "package:flutter/widgets.dart";
+
+import "app_locale.dart";
+import "app_locale_controller.dart";
+
+class AppLocaleScope extends InheritedNotifier<AppLocaleController> {
+  const AppLocaleScope({
+    super.key,
+    required AppLocaleController controller,
+    required super.child,
+  }) : super(notifier: controller);
+
+  static AppLocaleController controllerOf(BuildContext context) {
+    final AppLocaleScope? scope =
+        context.dependOnInheritedWidgetOfExactType<AppLocaleScope>();
+    assert(scope != null, "AppLocaleScope is missing in the widget tree.");
+    return scope!.notifier!;
+  }
+
+  static AppLocale localeOf(BuildContext context) {
+    return controllerOf(context).appLocale;
+  }
+}

@@ -1,11 +1,20 @@
-import "../../feed/feed_models.dart";
+import "package:flutter/widgets.dart";
 
-String formatFeedAuthorLabel(FeedPost post) {
+import "../../feed/feed_models.dart";
+import "../../localization/app_strings.dart";
+
+String formatFeedAuthorLabel(BuildContext context, FeedPost post) {
+  final AppStrings strings = context.strings;
   final String feedNumber = post.postNumber > 0 ? "#${post.postNumber}" : "#--";
-  return "$feedNumber ANONYMOUS";
+  return strings.feedAuthorAnonymous(feedNumber);
 }
 
-String formatFeedPublishedTimeAgo(DateTime publishedAt, {DateTime? now}) {
+String formatFeedPublishedTimeAgo(
+  BuildContext context,
+  DateTime publishedAt, {
+  DateTime? now,
+}) {
+  final AppStrings strings = context.strings;
   // Future timestamps can briefly appear while test data or device clocks are
   // being adjusted, so the label clamps negative durations to zero.
   final Duration rawDifference = (now ?? DateTime.now()).difference(
@@ -17,22 +26,22 @@ String formatFeedPublishedTimeAgo(DateTime publishedAt, {DateTime? now}) {
   final DateTime localPublishedAt = publishedAt.toLocal();
 
   if (difference.inMinutes < 1) {
-    return "Just now";
+    return strings.feedTimeJustNow;
   }
 
   if (difference.inHours < 1) {
     final int minutes = difference.inMinutes;
-    return minutes == 1 ? "1 min ago" : "$minutes min ago";
+    return strings.feedTimeMinute(minutes);
   }
 
   if (difference.inDays < 1) {
     final int hours = difference.inHours;
-    return hours == 1 ? "1 hr ago" : "$hours hrs ago";
+    return strings.feedTimeHour(hours);
   }
 
   if (difference.inDays == 1) {
-    return "Yesterday";
+    return strings.feedTimeYesterday;
   }
 
-  return "${localPublishedAt.month}/${localPublishedAt.day}";
+  return strings.formatMonthDay(localPublishedAt);
 }

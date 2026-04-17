@@ -3,6 +3,7 @@ import "package:flutter/services.dart";
 
 import "../../design/editorial_components.dart";
 import "../../design/editorial_tokens.dart";
+import "../../localization/app_strings.dart";
 
 class FeedCreateView extends StatelessWidget {
   const FeedCreateView({
@@ -48,6 +49,7 @@ class FeedCreateView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     final ThemeData theme = Theme.of(context);
     final bool useCompactFooter = MediaQuery.sizeOf(context).width < 640;
 
@@ -86,7 +88,7 @@ class FeedCreateView extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   _InlineToggleOption(
-                    label: "POST ANONYMOUSLY",
+                    label: strings.postAnonymously,
                     value: isAnonymous,
                     enabled: !isSubmitting,
                     activeTrackColor: EditorialColors.primary,
@@ -130,7 +132,7 @@ class FeedCreateView extends StatelessWidget {
                         decoration: InputDecoration(
                           isCollapsed: true,
                           border: InputBorder.none,
-                          hintText: "Write your prayer...",
+                          hintText: strings.writePrayerHint,
                           hintStyle: theme.textTheme.bodyLarge?.copyWith(
                             fontSize: 18,
                             height: 1.75,
@@ -211,7 +213,7 @@ class FeedCreateView extends StatelessWidget {
                 child: Column(
                   children: <Widget>[
                     Text(
-                      "\"Be still, and know that I am God.\"",
+                      strings.feedVerseBody,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontSize: 14,
@@ -224,7 +226,7 @@ class FeedCreateView extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      "(Psalm 46:10)",
+                      strings.feedVerseReference,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontSize: 12,
@@ -252,6 +254,7 @@ class _IdentitySummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     final ThemeData theme = Theme.of(context);
 
     return Row(
@@ -279,7 +282,7 @@ class _IdentitySummary extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(
-                "MY IDENTITY",
+                strings.identityLabel,
                 style: theme.textTheme.labelMedium?.copyWith(
                   fontSize: 11,
                   letterSpacing: 2,
@@ -332,11 +335,12 @@ class _ComposerVisibilityOptions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         _InlineToggleOption(
-          label: "MARK AS URGENT",
+          label: strings.markAsUrgent,
           value: isUrgent,
           enabled: enabled && isUrgentEnabled,
           isLoading: isUrgentLoading,

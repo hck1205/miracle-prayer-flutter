@@ -5,6 +5,7 @@ import "../../design/editorial_tokens.dart";
 import "../../feed/feed_controller.dart";
 import "../../feed/feed_models.dart";
 import "../../feed/feed_reaction.dart";
+import "../../localization/app_strings.dart";
 import "feed_post_lookup.dart";
 import "feed_post_meta.dart";
 import "feed_reaction_widgets.dart";
@@ -55,6 +56,7 @@ class _FeedDetailScreenState extends State<FeedDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
     final FeedPost post = _currentPost;
 
     return Scaffold(
@@ -79,7 +81,7 @@ class _FeedDetailScreenState extends State<FeedDetailScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    "Prayer detail",
+                    strings.feedDetailTitle,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: EditorialColors.onSurface,
