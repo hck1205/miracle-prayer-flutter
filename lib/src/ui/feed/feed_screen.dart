@@ -507,7 +507,7 @@ class _FeedScreenState extends State<FeedScreen> {
             );
           },
         );
-      }
+    }
   }
 
   void _enterSearchMode() {
@@ -769,7 +769,10 @@ class _FeedScreenState extends State<FeedScreen> {
       }
 
       _resetComposerState(nextTabIndex: nextTabIndex);
-      _showNotice(strings.draftSaved, duration: const Duration(milliseconds: 1400));
+      _showNotice(
+        strings.draftSaved,
+        duration: const Duration(milliseconds: 1400),
+      );
     } catch (error) {
       if (!mounted) {
         return;
@@ -831,7 +834,7 @@ class _FeedScreenState extends State<FeedScreen> {
       if (action == FeedDraftResumeAction.startNew) {
         try {
           await _controller.discardDraft(latestDraft.id);
-            _cacheLatestDraft(null);
+          _cacheLatestDraft(null);
         } catch (error) {
           if (mounted) {
             _showNotice(strings.localizeFeedError(mapFeedErrorMessage(error)));

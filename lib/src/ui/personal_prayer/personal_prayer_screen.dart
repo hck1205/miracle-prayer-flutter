@@ -141,7 +141,7 @@ class _PersonalPrayerScreenState extends State<PersonalPrayerScreen> {
       _selectedRange,
     );
     final List<PrayerReflectionEntry> reflections = _controller
-        .reflectionsForRange(_selectedRange);
+        .rootReflectionsForRange(_selectedRange);
 
     return <Widget>[
       SliverToBoxAdapter(
@@ -184,6 +184,7 @@ class _PersonalPrayerScreenState extends State<PersonalPrayerScreen> {
               selectedRange: _selectedRange,
               events: events,
               reflections: reflections,
+              repliesForReflection: _controller.repliesForReflection,
               findEventById: _controller.findEventById,
               onAddEvent: _handleAddEvent,
               onAddPrayer: _handleAddPrayerForSelectedDay,
@@ -201,7 +202,7 @@ class _PersonalPrayerScreenState extends State<PersonalPrayerScreen> {
   }
 
   List<Widget> _buildReflectionSlivers() {
-    final List<PrayerReflectionEntry> reflections = _controller.reflections;
+    final List<PrayerReflectionEntry> reflections = _controller.rootReflections;
 
     if (reflections.isEmpty) {
       return <Widget>[
@@ -212,11 +213,6 @@ class _PersonalPrayerScreenState extends State<PersonalPrayerScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: _EmptyReflectionState(
                 onAddDailyReflection: _handleAddDailyReflection,
-                onOpenCalendar: () {
-                  setState(() {
-                    _section = PersonalPrayerSection.calendar;
-                  });
-                },
               ),
             ),
           ),
@@ -239,7 +235,13 @@ class _PersonalPrayerScreenState extends State<PersonalPrayerScreen> {
               padding: EdgeInsets.fromLTRB(24, 0, 24, isLast ? 0 : 12),
               child: _ReflectionCard(
                 entry: entry,
+                replies: _controller.repliesForReflection(entry.id),
                 linkedEvent: linkedEvent,
+                onAddReply: () => _handleAddReflectionReply(entry),
+                onEditReply: (PrayerReflectionEntry reply) =>
+                    _handleEditReflectionReply(parent: entry, reply: reply),
+                onDeleteReply: (PrayerReflectionEntry reply) =>
+                    _handleDeleteReflectionReply(reply),
                 onEdit: () => _handleEditReflection(entry),
                 onDelete: () => _handleDeleteReflection(entry),
               ),
@@ -381,6 +383,89 @@ class _PersonalPrayerScreenState extends State<PersonalPrayerScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(strings.prayerNoteDeleted)));
+  }
+
+  Future<void> _handleAddReflectionReply(PrayerReflectionEntry parent) async {
+    final AppStrings strings = context.strings;
+    final _ReflectionReplyDraft? draft = await _showPersonalPrayerReplySheet(
+      context,
+      parentReflection: parent,
+    );
+    if (draft == null) {
+      return;
+    }
+
+    await _controller.addReflection(
+      date: parent.date,
+      title: "",
+      body: draft.body,
+      linkedEventId: parent.linkedEventId,
+      parentReflectionId: parent.id,
+      scripture: draft.scripture,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(strings.prayerReplySaved)));
+  }
+
+  Future<void> _handleEditReflectionReply({
+    required PrayerReflectionEntry parent,
+    required PrayerReflectionEntry reply,
+  }) async {
+    final AppStrings strings = context.strings;
+    final _ReflectionReplyDraft? draft = await _showPersonalPrayerReplySheet(
+      context,
+      parentReflection: parent,
+      initialReply: reply,
+    );
+    if (draft == null) {
+      return;
+    }
+
+    await _controller.updateReflection(
+      reflectionId: reply.id,
+      date: reply.date,
+      title: "",
+      body: draft.body,
+      linkedEventId: parent.linkedEventId,
+      parentReflectionId: parent.id,
+      scripture: draft.scripture,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(strings.prayerReplyUpdated)));
+  }
+
+  Future<void> _handleDeleteReflectionReply(PrayerReflectionEntry reply) async {
+    final AppStrings strings = context.strings;
+    final bool confirmed = await _showDeletePersonalPrayerItemDialog(
+      context,
+      title: strings.prayerDeleteReplyTitle,
+      body: strings.prayerDeleteReplyBody,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    await _controller.deleteSingleReflectionReply(reply.id);
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(strings.prayerReplyDeleted)));
   }
 
   Future<void> _openReflectionEditor({
@@ -916,6 +1001,7 @@ class _SelectedDayPanel extends StatelessWidget {
     required this.selectedRange,
     required this.events,
     required this.reflections,
+    required this.repliesForReflection,
     required this.findEventById,
     required this.onAddEvent,
     required this.onAddPrayer,
@@ -926,6 +1012,8 @@ class _SelectedDayPanel extends StatelessWidget {
   final DateTimeRange selectedRange;
   final List<PrayerCalendarEvent> events;
   final List<PrayerReflectionEntry> reflections;
+  final List<PrayerReflectionEntry> Function(String reflectionId)
+  repliesForReflection;
   final PrayerCalendarEvent? Function(String? id) findEventById;
   final VoidCallback onAddEvent;
   final VoidCallback onAddPrayer;
@@ -973,6 +1061,11 @@ class _SelectedDayPanel extends StatelessWidget {
               child: EditorialSecondaryButton(
                 label: strings.prayerAddEvent,
                 icon: Icons.event_note_rounded,
+                foregroundColor: EditorialColors.primaryDim,
+                backgroundColor: EditorialColors.primary.withValues(
+                  alpha: 0.08,
+                ),
+                borderColor: EditorialColors.primary.withValues(alpha: 0.24),
                 onPressed: onAddEvent,
               ),
             ),
@@ -981,6 +1074,13 @@ class _SelectedDayPanel extends StatelessWidget {
               child: EditorialSecondaryButton(
                 label: strings.prayerNote,
                 icon: Icons.auto_stories_rounded,
+                foregroundColor: EditorialColors.onSurface,
+                backgroundColor: EditorialColors.outlineVariant.withValues(
+                  alpha: 0.12,
+                ),
+                borderColor: EditorialColors.outlineVariant.withValues(
+                  alpha: 0.28,
+                ),
                 onPressed: onAddPrayer,
               ),
             ),
@@ -1037,6 +1137,7 @@ class _SelectedDayPanel extends StatelessWidget {
                             padding: const EdgeInsets.only(bottom: 14),
                             child: _DailyReflectionSnippet(
                               entry: entry,
+                              replies: repliesForReflection(entry.id),
                               linkedEvent: findEventById(entry.linkedEventId),
                             ),
                           );
@@ -1192,10 +1293,12 @@ class _EventCard extends StatelessWidget {
 class _DailyReflectionSnippet extends StatelessWidget {
   const _DailyReflectionSnippet({
     required this.entry,
+    required this.replies,
     required this.linkedEvent,
   });
 
   final PrayerReflectionEntry entry;
+  final List<PrayerReflectionEntry> replies;
   final PrayerCalendarEvent? linkedEvent;
 
   @override
@@ -1265,6 +1368,10 @@ class _DailyReflectionSnippet extends StatelessWidget {
               isKorean: strings.isKorean,
             )?.copyWith(color: EditorialColors.onSurfaceMuted, height: 1.75),
           ),
+          if (replies.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 16),
+            _ReflectionReplySection(replies: replies, compact: true),
+          ],
         ],
       ),
     );
@@ -1274,19 +1381,28 @@ class _DailyReflectionSnippet extends StatelessWidget {
 class _ReflectionCard extends StatelessWidget {
   const _ReflectionCard({
     required this.entry,
+    required this.replies,
     required this.linkedEvent,
+    required this.onAddReply,
+    required this.onEditReply,
+    required this.onDeleteReply,
     required this.onEdit,
     required this.onDelete,
   });
 
   final PrayerReflectionEntry entry;
+  final List<PrayerReflectionEntry> replies;
   final PrayerCalendarEvent? linkedEvent;
+  final VoidCallback onAddReply;
+  final ValueChanged<PrayerReflectionEntry> onEditReply;
+  final ValueChanged<PrayerReflectionEntry> onDeleteReply;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final AppStrings strings = context.strings;
+
     return EditorialSheet(
       tone: EditorialSheetTone.elevated,
       padding: const EdgeInsets.all(20),
@@ -1387,6 +1503,279 @@ class _ReflectionCard extends StatelessWidget {
               ),
             ),
           ],
+          const SizedBox(height: 18),
+          _ReflectionReplySection(
+            replies: replies,
+            onAddReply: onAddReply,
+            onEditReply: onEditReply,
+            onDeleteReply: onDeleteReply,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReflectionReplySection extends StatelessWidget {
+  const _ReflectionReplySection({
+    required this.replies,
+    this.onAddReply,
+    this.onEditReply,
+    this.onDeleteReply,
+    this.compact = false,
+  });
+
+  final List<PrayerReflectionEntry> replies;
+  final VoidCallback? onAddReply;
+  final ValueChanged<PrayerReflectionEntry>? onEditReply;
+  final ValueChanged<PrayerReflectionEntry>? onDeleteReply;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
+    if (compact && replies.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    if (replies.isEmpty) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: TextButton.icon(
+          onPressed: onAddReply,
+          icon: const Icon(Icons.reply_rounded, size: 14),
+          label: Text(
+            strings.prayerAddReply,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          style: _replyActionButtonStyle(),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Text(
+              strings.prayerReplySection,
+              style: EditorialTypography.trackedStyle(
+                Theme.of(context).textTheme.labelSmall,
+                isKorean: strings.isKorean,
+                color: EditorialColors.outline,
+                englishLetterSpacing: 1.1,
+                koreanLetterSpacing: 0.2,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: EditorialColors.surfaceLowest,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                "${replies.length}",
+                style: EditorialTypography.trackedStyle(
+                  Theme.of(context).textTheme.labelSmall,
+                  isKorean: strings.isKorean,
+                  color: EditorialColors.onSurfaceMuted,
+                  englishLetterSpacing: 0.6,
+                  koreanLetterSpacing: 0,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const Spacer(),
+            if (onAddReply != null && !compact)
+              TextButton.icon(
+                onPressed: onAddReply,
+                icon: const Icon(Icons.reply_rounded, size: 14),
+                label: Text(
+                  strings.prayerAddReply,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: _replyActionButtonStyle(),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Column(
+          children: replies
+              .map((PrayerReflectionEntry reply) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _ReflectionReplyCard(
+                    reply: reply,
+                    compact: compact,
+                    onEdit: onEditReply == null
+                        ? null
+                        : () => onEditReply!(reply),
+                    onDelete: onDeleteReply == null
+                        ? null
+                        : () => onDeleteReply!(reply),
+                  ),
+                );
+              })
+              .toList(growable: false),
+        ),
+      ],
+    );
+  }
+}
+
+ButtonStyle _replyActionButtonStyle() {
+  return ButtonStyle(
+    foregroundColor: WidgetStateProperty.all(EditorialColors.primaryDim),
+    padding: WidgetStateProperty.all(
+      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    ),
+    minimumSize: WidgetStateProperty.all(Size.zero),
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    shape: WidgetStateProperty.all(
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+    ),
+    overlayColor: WidgetStateProperty.resolveWith<Color?>((
+      Set<WidgetState> states,
+    ) {
+      if (states.contains(WidgetState.hovered)) {
+        return EditorialColors.primary.withValues(alpha: 0.12);
+      }
+      if (states.contains(WidgetState.pressed)) {
+        return EditorialColors.primary.withValues(alpha: 0.18);
+      }
+      return null;
+    }),
+    backgroundColor: WidgetStateProperty.resolveWith<Color?>((
+      Set<WidgetState> states,
+    ) {
+      if (states.contains(WidgetState.hovered)) {
+        return EditorialColors.primary.withValues(alpha: 0.05);
+      }
+      return Colors.transparent;
+    }),
+  );
+}
+
+class _ReflectionReplyCard extends StatelessWidget {
+  const _ReflectionReplyCard({
+    required this.reply,
+    required this.compact,
+    this.onEdit,
+    this.onDelete,
+  });
+
+  final PrayerReflectionEntry reply;
+  final bool compact;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppStrings strings = context.strings;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(compact ? 14 : 16),
+      decoration: BoxDecoration(
+        color: EditorialColors.surfaceLow,
+        borderRadius: BorderRadius.circular(compact ? 16 : 18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      strings.prayerReplyTitle,
+                      style:
+                          EditorialTypography.contentStyle(
+                            Theme.of(context).textTheme.bodyMedium,
+                            isKorean: strings.isKorean,
+                          )?.copyWith(
+                            color: EditorialColors.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatShortDate(context, reply.date).toUpperCase(),
+                      style: EditorialTypography.trackedStyle(
+                        Theme.of(context).textTheme.labelSmall,
+                        isKorean: strings.isKorean,
+                        color: EditorialColors.outline,
+                        englishLetterSpacing: 0.5,
+                        koreanLetterSpacing: 0.1,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (onEdit != null && onDelete != null)
+                _PersonalPrayerItemMenu(onEdit: onEdit!, onDelete: onDelete!),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            reply.body,
+            style: EditorialTypography.contentStyle(
+              Theme.of(context).textTheme.bodyMedium,
+              isKorean: strings.isKorean,
+            )?.copyWith(color: EditorialColors.onSurfaceMuted, height: 1.7),
+          ),
+          if (reply.hasScripture) ...<Widget>[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: EditorialColors.surfaceLowest,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    strings.prayerReplyScriptureLabel.toUpperCase(),
+                    style: EditorialTypography.trackedStyle(
+                      Theme.of(context).textTheme.labelSmall,
+                      isKorean: strings.isKorean,
+                      color: EditorialColors.outline,
+                      englishLetterSpacing: 1,
+                      koreanLetterSpacing: 0.2,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    reply.scripture!,
+                    style:
+                        EditorialTypography.contentStyle(
+                          Theme.of(context).textTheme.bodySmall,
+                          isKorean: strings.isKorean,
+                        )?.copyWith(
+                          color: EditorialColors.onSurfaceMuted,
+                          height: 1.7,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1443,13 +1832,9 @@ class _PersonalPrayerItemMenu extends StatelessWidget {
 }
 
 class _EmptyReflectionState extends StatelessWidget {
-  const _EmptyReflectionState({
-    required this.onAddDailyReflection,
-    required this.onOpenCalendar,
-  });
+  const _EmptyReflectionState({required this.onAddDailyReflection});
 
   final VoidCallback onAddDailyReflection;
-  final VoidCallback onOpenCalendar;
 
   @override
   Widget build(BuildContext context) {
@@ -1479,24 +1864,13 @@ class _EmptyReflectionState extends StatelessWidget {
             )?.copyWith(color: EditorialColors.onSurfaceMuted, height: 1.75),
           ),
           const SizedBox(height: 22),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: EditorialSecondaryButton(
-                  label: strings.prayerDailyReflection,
-                  icon: Icons.edit_note_rounded,
-                  onPressed: onAddDailyReflection,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: EditorialSecondaryButton(
-                  label: strings.prayerOpenCalendar,
-                  icon: Icons.calendar_month_rounded,
-                  onPressed: onOpenCalendar,
-                ),
-              ),
-            ],
+          SizedBox(
+            width: double.infinity,
+            child: EditorialSecondaryButton(
+              label: strings.prayerDailyReflection,
+              icon: Icons.edit_note_rounded,
+              onPressed: onAddDailyReflection,
+            ),
           ),
         ],
       ),
@@ -1563,28 +1937,30 @@ Future<bool> _showDeletePersonalPrayerItemDialog(
   required String title,
   required String body,
 }) async {
-  final AppStrings strings = context.strings;
   final bool? confirmed = await showDialog<bool>(
     context: context,
     builder: (BuildContext context) {
+      final AppStrings strings = context.strings;
       return AlertDialog(
         backgroundColor: EditorialColors.surfaceLowest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           title,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: EditorialColors.onSurface,
-          ),
+          style:
+              EditorialTypography.contentStyle(
+                Theme.of(context).textTheme.titleLarge,
+                isKorean: strings.isKorean,
+              )?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: EditorialColors.onSurface,
+              ),
         ),
         content: Text(
           body,
-          style: const TextStyle(
-            fontSize: 15,
-            height: 1.6,
-            color: EditorialColors.onSurfaceMuted,
-          ),
+          style: EditorialTypography.contentStyle(
+            Theme.of(context).textTheme.bodyMedium,
+            isKorean: strings.isKorean,
+          )?.copyWith(height: 1.6, color: EditorialColors.onSurfaceMuted),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         actions: <Widget>[
@@ -1649,6 +2025,24 @@ Future<_ReflectionDraft?> _showPersonalPrayerReflectionSheet(
         availableEvents: availableEvents,
         showEventOptions: showEventOptions,
         initialReflection: initialReflection,
+      );
+    },
+  );
+}
+
+Future<_ReflectionReplyDraft?> _showPersonalPrayerReplySheet(
+  BuildContext context, {
+  required PrayerReflectionEntry parentReflection,
+  PrayerReflectionEntry? initialReply,
+}) {
+  return showModalBottomSheet<_ReflectionReplyDraft>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (BuildContext context) {
+      return _ReflectionReplyEditorSheet(
+        parentReflection: parentReflection,
+        initialReply: initialReply,
       );
     },
   );
@@ -1737,7 +2131,14 @@ class _EventEditorSheetState extends State<_EventEditorSheet> {
               label: strings.prayerFieldTitle,
               child: TextField(
                 controller: _titleController,
-                decoration: _sheetDecoration(strings.prayerEventTitleHint),
+                style: EditorialTypography.contentStyle(
+                  Theme.of(context).textTheme.bodyMedium,
+                  isKorean: strings.isKorean,
+                )?.copyWith(color: EditorialColors.onSurface),
+                decoration: _sheetDecoration(
+                  context,
+                  strings.prayerEventTitleHint,
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -1747,7 +2148,14 @@ class _EventEditorSheetState extends State<_EventEditorSheet> {
                 controller: _detailsController,
                 minLines: 3,
                 maxLines: 5,
-                decoration: _sheetDecoration(strings.prayerEventDetailsHint),
+                style: EditorialTypography.contentStyle(
+                  Theme.of(context).textTheme.bodyMedium,
+                  isKorean: strings.isKorean,
+                )?.copyWith(color: EditorialColors.onSurface),
+                decoration: _sheetDecoration(
+                  context,
+                  strings.prayerEventDetailsHint,
+                ),
               ),
             ),
             const SizedBox(height: 18),
@@ -1886,7 +2294,14 @@ class _ReflectionEditorSheetState extends State<_ReflectionEditorSheet> {
                 label: strings.prayerFieldTitle,
                 child: TextField(
                   controller: _titleController,
-                  decoration: _sheetDecoration(strings.prayerNoteTitleHint),
+                  style: EditorialTypography.contentStyle(
+                    Theme.of(context).textTheme.bodyMedium,
+                    isKorean: strings.isKorean,
+                  )?.copyWith(color: EditorialColors.onSurface),
+                  decoration: _sheetDecoration(
+                    context,
+                    strings.prayerNoteTitleHint,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -1896,7 +2311,14 @@ class _ReflectionEditorSheetState extends State<_ReflectionEditorSheet> {
                   controller: _bodyController,
                   minLines: 5,
                   maxLines: 8,
-                  decoration: _sheetDecoration(strings.prayerNoteBodyHint),
+                  style: EditorialTypography.contentStyle(
+                    Theme.of(context).textTheme.bodyMedium,
+                    isKorean: strings.isKorean,
+                  )?.copyWith(color: EditorialColors.onSurface),
+                  decoration: _sheetDecoration(
+                    context,
+                    strings.prayerNoteBodyHint,
+                  ),
                 ),
               ),
               if (widget.showEventOptions) ...<Widget>[
@@ -1913,18 +2335,41 @@ class _ReflectionEditorSheetState extends State<_ReflectionEditorSheet> {
                       child: DropdownButton<String?>(
                         value: _linkedEventId,
                         isExpanded: true,
-                        hint: Text(strings.prayerDailyNoteOnly),
+                        style: EditorialTypography.contentStyle(
+                          Theme.of(context).textTheme.bodyMedium,
+                          isKorean: strings.isKorean,
+                        )?.copyWith(color: EditorialColors.onSurface),
+                        hint: Text(
+                          strings.prayerDailyNoteOnly,
+                          style: EditorialTypography.contentStyle(
+                            Theme.of(context).textTheme.bodyMedium,
+                            isKorean: strings.isKorean,
+                          )?.copyWith(color: EditorialColors.onSurfaceMuted),
+                        ),
                         items: <DropdownMenuItem<String?>>[
                           DropdownMenuItem<String?>(
                             value: null,
-                            child: Text(strings.prayerDailyNoteOnly),
+                            child: Text(
+                              strings.prayerDailyNoteOnly,
+                              style: EditorialTypography.contentStyle(
+                                Theme.of(context).textTheme.bodyMedium,
+                                isKorean: strings.isKorean,
+                              )?.copyWith(color: EditorialColors.onSurface),
+                            ),
                           ),
                           ...widget.availableEvents.map(
-                            (PrayerCalendarEvent event) =>
-                                DropdownMenuItem<String?>(
-                                  value: event.id,
-                                  child: Text(event.title),
-                                ),
+                            (
+                              PrayerCalendarEvent event,
+                            ) => DropdownMenuItem<String?>(
+                              value: event.id,
+                              child: Text(
+                                event.title,
+                                style: EditorialTypography.contentStyle(
+                                  Theme.of(context).textTheme.bodyMedium,
+                                  isKorean: strings.isKorean,
+                                )?.copyWith(color: EditorialColors.onSurface),
+                              ),
+                            ),
                           ),
                         ],
                         onChanged: (String? value) {
@@ -1969,6 +2414,170 @@ class _ReflectionEditorSheetState extends State<_ReflectionEditorSheet> {
   }
 }
 
+class _ReflectionReplyEditorSheet extends StatefulWidget {
+  const _ReflectionReplyEditorSheet({
+    required this.parentReflection,
+    this.initialReply,
+  });
+
+  final PrayerReflectionEntry parentReflection;
+  final PrayerReflectionEntry? initialReply;
+
+  @override
+  State<_ReflectionReplyEditorSheet> createState() =>
+      _ReflectionReplyEditorSheetState();
+}
+
+class _ReflectionReplyEditorSheetState
+    extends State<_ReflectionReplyEditorSheet> {
+  late final TextEditingController _bodyController;
+  late final TextEditingController _scriptureController;
+
+  @override
+  void initState() {
+    super.initState();
+    _bodyController = TextEditingController(
+      text: widget.initialReply?.body ?? "",
+    );
+    _scriptureController = TextEditingController(
+      text: widget.initialReply?.scripture ?? "",
+    );
+  }
+
+  @override
+  void dispose() {
+    _bodyController.dispose();
+    _scriptureController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final double bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final AppStrings strings = context.strings;
+    final bool isEditing = widget.initialReply != null;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, bottomInset + 16),
+      child: EditorialSheet(
+        padding: const EdgeInsets.all(24),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                isEditing
+                    ? strings.prayerEditReplyTitle
+                    : strings.prayerAddReplyTitle,
+                style: EditorialTypography.contentStyle(
+                  Theme.of(context).textTheme.titleLarge,
+                  isKorean: strings.isKorean,
+                )?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 18),
+              _SheetField(
+                label: strings.prayerReplyParentLabel,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: EditorialColors.surfaceLow,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        widget.parentReflection.title,
+                        style:
+                            EditorialTypography.contentStyle(
+                              Theme.of(context).textTheme.bodyMedium,
+                              isKorean: strings.isKorean,
+                            )?.copyWith(
+                              color: EditorialColors.onSurface,
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _preview(widget.parentReflection.body, maxLength: 180),
+                        style:
+                            EditorialTypography.contentStyle(
+                              Theme.of(context).textTheme.bodySmall,
+                              isKorean: strings.isKorean,
+                            )?.copyWith(
+                              color: EditorialColors.onSurfaceMuted,
+                              height: 1.7,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _SheetField(
+                label: strings.prayerReplyBodyLabel,
+                child: TextField(
+                  controller: _bodyController,
+                  minLines: 4,
+                  maxLines: 7,
+                  style: EditorialTypography.contentStyle(
+                    Theme.of(context).textTheme.bodyMedium,
+                    isKorean: strings.isKorean,
+                  )?.copyWith(color: EditorialColors.onSurface),
+                  decoration: _sheetDecoration(
+                    context,
+                    strings.prayerReplyBodyHint,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _SheetField(
+                label: strings.prayerReplyScriptureLabel,
+                child: TextField(
+                  controller: _scriptureController,
+                  minLines: 2,
+                  maxLines: 4,
+                  style: EditorialTypography.contentStyle(
+                    Theme.of(context).textTheme.bodyMedium,
+                    isKorean: strings.isKorean,
+                  )?.copyWith(color: EditorialColors.onSurface),
+                  decoration: _sheetDecoration(
+                    context,
+                    strings.prayerReplyScriptureHint,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: EditorialPrimaryButton(
+                  label: isEditing ? strings.edit : strings.prayerAddReply,
+                  onPressed: () {
+                    final String body = _bodyController.text.trim();
+                    final String scripture = _scriptureController.text.trim();
+                    if (body.isEmpty) {
+                      return;
+                    }
+
+                    Navigator.of(context).pop(
+                      _ReflectionReplyDraft(
+                        body: body,
+                        scripture: scripture.isEmpty ? null : scripture,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SheetField extends StatelessWidget {
   const _SheetField({required this.label, required this.child});
 
@@ -1999,9 +2608,14 @@ class _SheetField extends StatelessWidget {
   }
 }
 
-InputDecoration _sheetDecoration(String hintText) {
+InputDecoration _sheetDecoration(BuildContext context, String hintText) {
+  final AppStrings strings = context.strings;
   return InputDecoration(
     hintText: hintText,
+    hintStyle: EditorialTypography.contentStyle(
+      Theme.of(context).textTheme.bodyMedium,
+      isKorean: strings.isKorean,
+    )?.copyWith(color: EditorialColors.onSurfaceMuted),
     filled: true,
     fillColor: EditorialColors.surfaceLow,
     border: OutlineInputBorder(
@@ -2049,6 +2663,13 @@ class _ReflectionDraft {
   final String title;
   final String body;
   final String? linkedEventId;
+}
+
+class _ReflectionReplyDraft {
+  const _ReflectionReplyDraft({required this.body, this.scripture});
+
+  final String body;
+  final String? scripture;
 }
 
 String _formatMonthYear(BuildContext context, DateTime date) {

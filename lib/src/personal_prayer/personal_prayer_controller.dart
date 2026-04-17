@@ -31,6 +31,9 @@ class PersonalPrayerController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   List<PrayerCalendarEvent> get events => _events;
   List<PrayerReflectionEntry> get reflections => _reflections;
+  List<PrayerReflectionEntry> get rootReflections => _reflections
+      .where((PrayerReflectionEntry entry) => !entry.isReply)
+      .toList(growable: false);
 
   Future<void> bootstrap() async {
     if (_didBootstrap) {
@@ -105,9 +108,30 @@ class PersonalPrayerController extends ChangeNotifier {
   }
 
   List<PrayerReflectionEntry> reflectionsForEvent(String eventId) {
-    return _reflections.where((PrayerReflectionEntry entry) {
-      return entry.linkedEventId == eventId;
-    }).toList(growable: false);
+    return _reflections
+        .where((PrayerReflectionEntry entry) {
+          return entry.linkedEventId == eventId && !entry.isReply;
+        })
+        .toList(growable: false);
+  }
+
+  List<PrayerReflectionEntry> rootReflectionsForRange(DateTimeRange range) {
+    return reflectionsForRange(range)
+        .where((PrayerReflectionEntry entry) => !entry.isReply)
+        .toList(growable: false);
+  }
+
+  List<PrayerReflectionEntry> repliesForReflection(String reflectionId) {
+    final List<PrayerReflectionEntry> replies = _reflections
+        .where((PrayerReflectionEntry entry) {
+          return entry.parentReflectionId == reflectionId;
+        })
+        .toList(growable: false);
+
+    replies.sort((PrayerReflectionEntry a, PrayerReflectionEntry b) {
+      return a.createdAt.compareTo(b.createdAt);
+    });
+    return replies;
   }
 
   PrayerCalendarEvent? findEventById(String? eventId) {
@@ -155,6 +179,8 @@ class PersonalPrayerController extends ChangeNotifier {
     required String title,
     required String body,
     String? linkedEventId,
+    String? parentReflectionId,
+    String? scripture,
   }) async {
     final DateTime now = DateTime.now();
     final PrayerReflectionEntry reflection = PrayerReflectionEntry(
@@ -166,13 +192,18 @@ class PersonalPrayerController extends ChangeNotifier {
       linkedEventId: linkedEventId?.trim().isEmpty ?? true
           ? null
           : linkedEventId?.trim(),
+      parentReflectionId: parentReflectionId?.trim().isEmpty ?? true
+          ? null
+          : parentReflectionId?.trim(),
+      scripture: scripture?.trim().isEmpty ?? true ? null : scripture?.trim(),
     );
 
     _replaceData(
       events: _events,
-      reflections: _sortReflections(
-        <PrayerReflectionEntry>[reflection, ..._reflections],
-      ),
+      reflections: _sortReflections(<PrayerReflectionEntry>[
+        reflection,
+        ..._reflections,
+      ]),
     );
     notifyListeners();
     await _persist();
@@ -187,18 +218,24 @@ class PersonalPrayerController extends ChangeNotifier {
   }) async {
     _replaceData(
       events: _sortEvents(
-        _events.map((PrayerCalendarEvent event) {
-          if (event.id != eventId) {
-            return event;
-          }
+        _events
+            .map((PrayerCalendarEvent event) {
+              if (event.id != eventId) {
+                return event;
+              }
 
-          return event.copyWith(
-            startDate: DateTime(startDate.year, startDate.month, startDate.day),
-            endDate: DateTime(endDate.year, endDate.month, endDate.day),
-            title: title.trim(),
-            details: details.trim(),
-          );
-        }).toList(growable: false),
+              return event.copyWith(
+                startDate: DateTime(
+                  startDate.year,
+                  startDate.month,
+                  startDate.day,
+                ),
+                endDate: DateTime(endDate.year, endDate.month, endDate.day),
+                title: title.trim(),
+                details: details.trim(),
+              );
+            })
+            .toList(growable: false),
       ),
       reflections: _reflections,
     );
@@ -211,13 +248,15 @@ class PersonalPrayerController extends ChangeNotifier {
       events: _events
           .where((PrayerCalendarEvent event) => event.id != eventId)
           .toList(growable: false),
-      reflections: _reflections.map((PrayerReflectionEntry entry) {
-        if (entry.linkedEventId != eventId) {
-          return entry;
-        }
+      reflections: _reflections
+          .map((PrayerReflectionEntry entry) {
+            if (entry.linkedEventId != eventId) {
+              return entry;
+            }
 
-        return entry.copyWith(clearLinkedEventId: true);
-      }).toList(growable: false),
+            return entry.copyWith(clearLinkedEventId: true);
+          })
+          .toList(growable: false),
     );
     notifyListeners();
     await _persist();
@@ -229,25 +268,48 @@ class PersonalPrayerController extends ChangeNotifier {
     required String title,
     required String body,
     required String? linkedEventId,
+    String? parentReflectionId,
+    String? scripture,
   }) async {
     _replaceData(
       events: _events,
       reflections: _sortReflections(
-        _reflections.map((PrayerReflectionEntry entry) {
-          if (entry.id != reflectionId) {
-            return entry;
-          }
+        _reflections
+            .map((PrayerReflectionEntry entry) {
+              if (entry.id != reflectionId) {
+                if (entry.parentReflectionId != reflectionId) {
+                  return entry;
+                }
 
-          return entry.copyWith(
-            date: DateTime(date.year, date.month, date.day),
-            title: title.trim(),
-            body: body.trim(),
-            linkedEventId: linkedEventId?.trim().isEmpty ?? true
-                ? null
-                : linkedEventId?.trim(),
-            clearLinkedEventId: linkedEventId?.trim().isEmpty ?? true,
-          );
-        }).toList(growable: false),
+                return entry.copyWith(
+                  date: DateTime(date.year, date.month, date.day),
+                  linkedEventId: linkedEventId?.trim().isEmpty ?? true
+                      ? null
+                      : linkedEventId?.trim(),
+                  clearLinkedEventId: linkedEventId?.trim().isEmpty ?? true,
+                );
+              }
+
+              return entry.copyWith(
+                date: DateTime(date.year, date.month, date.day),
+                title: title.trim(),
+                body: body.trim(),
+                linkedEventId: linkedEventId?.trim().isEmpty ?? true
+                    ? null
+                    : linkedEventId?.trim(),
+                parentReflectionId: parentReflectionId?.trim().isEmpty ?? true
+                    ? null
+                    : parentReflectionId?.trim(),
+                scripture: scripture?.trim().isEmpty ?? true
+                    ? null
+                    : scripture?.trim(),
+                clearLinkedEventId: linkedEventId?.trim().isEmpty ?? true,
+                clearParentReflectionId:
+                    parentReflectionId?.trim().isEmpty ?? true,
+                clearScripture: scripture?.trim().isEmpty ?? true,
+              );
+            })
+            .toList(growable: false),
       ),
     );
     notifyListeners();
@@ -255,6 +317,20 @@ class PersonalPrayerController extends ChangeNotifier {
   }
 
   Future<void> deleteReflection(String reflectionId) async {
+    _replaceData(
+      events: _events,
+      reflections: _reflections
+          .where((PrayerReflectionEntry entry) {
+            return entry.id != reflectionId &&
+                entry.parentReflectionId != reflectionId;
+          })
+          .toList(growable: false),
+    );
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> deleteSingleReflectionReply(String reflectionId) async {
     _replaceData(
       events: _events,
       reflections: _reflections
@@ -327,10 +403,7 @@ class PersonalPrayerController extends ChangeNotifier {
     _eventsById = <String, PrayerCalendarEvent>{
       for (final PrayerCalendarEvent event in events) event.id: event,
     };
-    _contentDayKeys = <int>{
-      ..._eventsByDay.keys,
-      ..._reflectionsByDay.keys,
-    };
+    _contentDayKeys = <int>{..._eventsByDay.keys, ..._reflectionsByDay.keys};
   }
 
   Map<int, List<PrayerCalendarEvent>> _indexEventsByDay(
@@ -418,7 +491,8 @@ class PersonalPrayerController extends ChangeNotifier {
     };
   }
 
-  int _dayKey(DateTime value) => value.year * 10000 + value.month * 100 + value.day;
+  int _dayKey(DateTime value) =>
+      value.year * 10000 + value.month * 100 + value.day;
 
   DateTime _dateOnly(DateTime value) {
     return DateTime(value.year, value.month, value.day);

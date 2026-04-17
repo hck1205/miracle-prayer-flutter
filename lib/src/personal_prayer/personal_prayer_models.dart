@@ -85,6 +85,8 @@ class PrayerReflectionEntry {
     required this.body,
     required this.createdAt,
     this.linkedEventId,
+    this.parentReflectionId,
+    this.scripture,
   });
 
   factory PrayerReflectionEntry.fromJson(Map<String, dynamic> json) {
@@ -95,6 +97,8 @@ class PrayerReflectionEntry {
       body: json["body"] as String? ?? "",
       createdAt: DateTime.parse(json["createdAt"] as String),
       linkedEventId: json["linkedEventId"] as String?,
+      parentReflectionId: json["parentReflectionId"] as String?,
+      scripture: json["scripture"] as String?,
     );
   }
 
@@ -104,8 +108,14 @@ class PrayerReflectionEntry {
   final String body;
   final DateTime createdAt;
   final String? linkedEventId;
+  final String? parentReflectionId;
+  final String? scripture;
 
-  bool get isLinkedToEvent => linkedEventId != null && linkedEventId!.isNotEmpty;
+  bool get isLinkedToEvent =>
+      linkedEventId != null && linkedEventId!.isNotEmpty;
+  bool get isReply =>
+      parentReflectionId != null && parentReflectionId!.isNotEmpty;
+  bool get hasScripture => scripture != null && scripture!.trim().isNotEmpty;
 
   PrayerReflectionEntry copyWith({
     String? id,
@@ -114,7 +124,11 @@ class PrayerReflectionEntry {
     String? body,
     DateTime? createdAt,
     String? linkedEventId,
+    String? parentReflectionId,
+    String? scripture,
     bool clearLinkedEventId = false,
+    bool clearParentReflectionId = false,
+    bool clearScripture = false,
   }) {
     return PrayerReflectionEntry(
       id: id ?? this.id,
@@ -125,6 +139,10 @@ class PrayerReflectionEntry {
       linkedEventId: clearLinkedEventId
           ? null
           : (linkedEventId ?? this.linkedEventId),
+      parentReflectionId: clearParentReflectionId
+          ? null
+          : (parentReflectionId ?? this.parentReflectionId),
+      scripture: clearScripture ? null : (scripture ?? this.scripture),
     );
   }
 
@@ -136,6 +154,8 @@ class PrayerReflectionEntry {
       "body": body,
       "createdAt": createdAt.toIso8601String(),
       "linkedEventId": linkedEventId,
+      "parentReflectionId": parentReflectionId,
+      "scripture": scripture,
     };
   }
 }
@@ -155,7 +175,8 @@ class PersonalPrayerSnapshot {
 
   factory PersonalPrayerSnapshot.fromStorage(String raw) {
     final Map<String, dynamic> json = jsonDecode(raw) as Map<String, dynamic>;
-    final List<dynamic> events = json["events"] as List<dynamic>? ?? <dynamic>[];
+    final List<dynamic> events =
+        json["events"] as List<dynamic>? ?? <dynamic>[];
     final List<dynamic> reflections =
         json["reflections"] as List<dynamic>? ?? <dynamic>[];
 
@@ -176,7 +197,9 @@ class PersonalPrayerSnapshot {
 
   String toStorage() {
     return jsonEncode(<String, dynamic>{
-      "events": events.map((PrayerCalendarEvent item) => item.toJson()).toList(),
+      "events": events
+          .map((PrayerCalendarEvent item) => item.toJson())
+          .toList(),
       "reflections": reflections
           .map((PrayerReflectionEntry item) => item.toJson())
           .toList(),

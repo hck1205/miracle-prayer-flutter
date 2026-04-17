@@ -3,6 +3,7 @@ import "package:flutter/services.dart";
 
 import "../../design/editorial_components.dart";
 import "../../design/editorial_tokens.dart";
+import "../../design/editorial_typography.dart";
 import "../../localization/app_strings.dart";
 
 class FeedCreateView extends StatelessWidget {
@@ -51,6 +52,7 @@ class FeedCreateView extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppStrings strings = context.strings;
     final ThemeData theme = Theme.of(context);
+    final bool isKorean = strings.isKorean;
     final bool useCompactFooter = MediaQuery.sizeOf(context).width < 640;
 
     return SafeArea(
@@ -69,13 +71,17 @@ class FeedCreateView extends StatelessWidget {
             children: <Widget>[
               Text(
                 title,
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontSize: 32,
-                  height: 1.15,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.6,
-                  color: EditorialColors.onSurface,
-                ),
+                style:
+                    EditorialTypography.contentStyle(
+                      theme.textTheme.headlineMedium,
+                      isKorean: isKorean,
+                    )?.copyWith(
+                      fontSize: 32,
+                      height: 1.15,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.6,
+                      color: EditorialColors.onSurface,
+                    ),
               ),
               const SizedBox(height: 16),
               const EditorialDivider(),
@@ -121,11 +127,15 @@ class FeedCreateView extends StatelessWidget {
                         enabled: !isSubmitting,
                         minLines: 10,
                         maxLines: null,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontSize: 18,
-                          height: 1.75,
-                          color: EditorialColors.onSurface,
-                        ),
+                        style:
+                            EditorialTypography.contentStyle(
+                              theme.textTheme.bodyLarge,
+                              isKorean: isKorean,
+                            )?.copyWith(
+                              fontSize: 18,
+                              height: 1.75,
+                              color: EditorialColors.onSurface,
+                            ),
                         inputFormatters: <TextInputFormatter>[
                           LengthLimitingTextInputFormatter(maxBodyLength),
                         ],
@@ -133,13 +143,16 @@ class FeedCreateView extends StatelessWidget {
                           isCollapsed: true,
                           border: InputBorder.none,
                           hintText: strings.writePrayerHint,
-                          hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                            fontSize: 18,
-                            height: 1.75,
-                            color: EditorialColors.outlineVariant.withValues(
-                              alpha: 0.6,
-                            ),
-                          ),
+                          hintStyle:
+                              EditorialTypography.contentStyle(
+                                theme.textTheme.bodyLarge,
+                                isKorean: isKorean,
+                              )?.copyWith(
+                                fontSize: 18,
+                                height: 1.75,
+                                color: EditorialColors.outlineVariant
+                                    .withValues(alpha: 0.6),
+                              ),
                         ),
                       ),
                     ),
@@ -215,26 +228,33 @@ class FeedCreateView extends StatelessWidget {
                     Text(
                       strings.feedVerseBody,
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontSize: 14,
-                        height: 1.6,
-                        fontStyle: FontStyle.italic,
-                        color: EditorialColors.onSurfaceMuted.withValues(
-                          alpha: 0.72,
-                        ),
-                      ),
+                      style:
+                          EditorialTypography.contentStyle(
+                            theme.textTheme.bodyMedium,
+                            isKorean: isKorean,
+                          )?.copyWith(
+                            fontSize: 14,
+                            height: 1.6,
+                            fontStyle: FontStyle.italic,
+                            color: EditorialColors.onSurfaceMuted.withValues(
+                              alpha: 0.72,
+                            ),
+                          ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       strings.feedVerseReference,
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontSize: 12,
-                        letterSpacing: 0.4,
+                      style: EditorialTypography.trackedStyle(
+                        theme.textTheme.bodySmall,
+                        isKorean: isKorean,
                         color: EditorialColors.onSurfaceMuted.withValues(
                           alpha: 0.64,
                         ),
-                      ),
+                        englishLetterSpacing: 0.4,
+                        koreanLetterSpacing: 0.1,
+                        fontWeight: FontWeight.w500,
+                      )?.copyWith(fontSize: 12),
                     ),
                   ],
                 ),
@@ -256,6 +276,7 @@ class _IdentitySummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppStrings strings = context.strings;
     final ThemeData theme = Theme.of(context);
+    final bool isKorean = strings.isKorean;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -270,10 +291,14 @@ class _IdentitySummary extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(
             _identityInitial(identityLabel),
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: EditorialColors.onSurfaceMuted,
-            ),
+            style:
+                EditorialTypography.contentStyle(
+                  theme.textTheme.titleMedium,
+                  isKorean: isKorean,
+                )?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: EditorialColors.onSurfaceMuted,
+                ),
           ),
         ),
         const SizedBox(width: 12),
@@ -283,21 +308,24 @@ class _IdentitySummary extends StatelessWidget {
             children: <Widget>[
               Text(
                 strings.identityLabel,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  fontSize: 11,
-                  letterSpacing: 2,
+                style: EditorialTypography.trackedStyle(
+                  theme.textTheme.labelMedium,
+                  isKorean: isKorean,
                   color: EditorialColors.onSurfaceMuted,
-                ),
+                  englishLetterSpacing: 2,
+                  koreanLetterSpacing: 0.3,
+                  fontWeight: FontWeight.w600,
+                )?.copyWith(fontSize: 11),
               ),
               const SizedBox(height: 4),
               Text(
                 identityLabel,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontSize: 12,
-                  color: EditorialColors.outline,
-                ),
+                style: EditorialTypography.contentStyle(
+                  theme.textTheme.bodySmall,
+                  isKorean: isKorean,
+                )?.copyWith(fontSize: 12, color: EditorialColors.outline),
               ),
             ],
           ),
@@ -336,6 +364,7 @@ class _ComposerVisibilityOptions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppStrings strings = context.strings;
+    final bool isKorean = strings.isKorean;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -351,13 +380,17 @@ class _ComposerVisibilityOptions extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           urgentHelperText,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            fontSize: 11,
-            height: 1.45,
-            color: isUrgent
-                ? EditorialColors.error
-                : EditorialColors.onSurfaceMuted,
-          ),
+          style:
+              EditorialTypography.contentStyle(
+                Theme.of(context).textTheme.bodySmall,
+                isKorean: isKorean,
+              )?.copyWith(
+                fontSize: 11,
+                height: 1.45,
+                color: isUrgent
+                    ? EditorialColors.error
+                    : EditorialColors.onSurfaceMuted,
+              ),
         ),
       ],
     );
@@ -388,6 +421,7 @@ class _InlineToggleOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final bool isKorean = context.strings.isKorean;
     final bool showSpinner = isLoading && !value;
 
     return Opacity(
@@ -401,11 +435,14 @@ class _InlineToggleOption extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: alignEnd ? TextAlign.right : TextAlign.left,
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontSize: 10,
-                letterSpacing: 1.2,
+              style: EditorialTypography.trackedStyle(
+                theme.textTheme.labelMedium,
+                isKorean: isKorean,
                 color: EditorialColors.onSurfaceMuted,
-              ),
+                englishLetterSpacing: 1.2,
+                koreanLetterSpacing: 0.2,
+                fontWeight: FontWeight.w600,
+              )?.copyWith(fontSize: 10),
             ),
           ),
           if (showSpinner) ...<Widget>[
@@ -450,6 +487,7 @@ class _CreateMetaRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final bool isKorean = context.strings.isKorean;
 
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
@@ -458,11 +496,14 @@ class _CreateMetaRow extends StatelessWidget {
       children: <Widget>[
         Text(
           "$characterCount / ${FeedCreateView.maxBodyLength}",
-          style: theme.textTheme.labelMedium?.copyWith(
-            fontSize: 12,
-            letterSpacing: 1.8,
+          style: EditorialTypography.trackedStyle(
+            theme.textTheme.labelMedium,
+            isKorean: isKorean,
             color: EditorialColors.onSurfaceMuted,
-          ),
+            englishLetterSpacing: 1.8,
+            koreanLetterSpacing: 0.2,
+            fontWeight: FontWeight.w600,
+          )?.copyWith(fontSize: 12),
         ),
         _MetaIconButton(icon: Icons.tag, onTap: onTagTap),
         _MetaIconButton(icon: Icons.format_quote, onTap: onQuoteTap),
@@ -513,6 +554,7 @@ class _CreateActionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final bool isKorean = context.strings.isKorean;
     final VoidCallback? primaryAction = canSubmit ? onPrimaryAction : null;
     final VoidCallback? secondaryAction = isSubmitting
         ? null
@@ -542,11 +584,14 @@ class _CreateActionRow extends StatelessWidget {
             onPressed: secondaryAction,
             child: Text(
               secondaryActionLabel,
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontSize: 12,
-                letterSpacing: 1.8,
+              style: EditorialTypography.trackedStyle(
+                theme.textTheme.labelMedium,
+                isKorean: isKorean,
                 color: EditorialColors.onSurfaceMuted,
-              ),
+                englishLetterSpacing: 1.8,
+                koreanLetterSpacing: 0.2,
+                fontWeight: FontWeight.w600,
+              )?.copyWith(fontSize: 12),
             ),
           ),
           _CompactPrimaryActionButton(
@@ -572,9 +617,15 @@ class _CompactPrimaryActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle? style = Theme.of(
-      context,
-    ).textTheme.labelMedium?.copyWith(color: EditorialColors.onPrimary);
+    final bool isKorean = context.strings.isKorean;
+    final TextStyle? style = EditorialTypography.trackedStyle(
+      Theme.of(context).textTheme.labelMedium,
+      isKorean: isKorean,
+      color: EditorialColors.onPrimary,
+      englishLetterSpacing: 1.2,
+      koreanLetterSpacing: 0.2,
+      fontWeight: FontWeight.w600,
+    );
 
     return Opacity(
       opacity: onPressed == null ? 0.5 : 1,

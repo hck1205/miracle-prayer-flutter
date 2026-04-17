@@ -164,16 +164,27 @@ class EditorialSecondaryButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.icon,
+    this.foregroundColor,
+    this.backgroundColor,
+    this.borderColor,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
+  final Color? foregroundColor;
+  final Color? backgroundColor;
+  final Color? borderColor;
 
   @override
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
       onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: foregroundColor,
+        backgroundColor: backgroundColor,
+        side: borderColor == null ? null : BorderSide(color: borderColor!),
+      ),
       icon: icon == null ? const SizedBox.shrink() : Icon(icon, size: 18),
       label: Text(label),
     );

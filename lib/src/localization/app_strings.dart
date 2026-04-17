@@ -139,8 +139,7 @@ class AppStrings {
     "feed.searchHeaderShortBody":
         "Enter at least 2 characters before we search the feed.",
     "feed.searchHeaderResultsTitle": "Search results.",
-    "feed.searchHeaderResultsBody":
-        "Showing prayers that mention \"{query}\".",
+    "feed.searchHeaderResultsBody": "Showing prayers that mention \"{query}\".",
     "feed.searchLoading": "Searching prayers...",
     "feed.searchEmptyIdleTitle": "Start typing to search.",
     "feed.searchEmptyIdleBody":
@@ -163,8 +162,7 @@ class AppStrings {
     "feed.composerTagUnavailable": "Tagging is not connected yet.",
     "feed.composerQuoteUnavailable": "Quote templates are not connected yet.",
     "feed.composerEmpty": "Write your prayer before continuing.",
-    "feed.composerMissingEditTarget":
-        "There is no post selected for editing.",
+    "feed.composerMissingEditTarget": "There is no post selected for editing.",
     "feed.shared": "Prayer shared.",
     "feed.updated": "Prayer updated.",
     "feed.draftSaved": "Draft saved.",
@@ -258,9 +256,27 @@ class AppStrings {
     "prayer.linkedNotes.other": "{count} prayer notes linked.",
     "prayer.emptyNotebookTitle": "Your notebook is still quiet.",
     "prayer.emptyNotebookBody":
-        "Start with a simple daily reflection, or open the calendar first and anchor a prayer note to a specific event.",
+        "Start with a simple daily reflection and begin recording what is on your heart today.",
     "prayer.dailyReflection": "Daily Reflection",
-    "prayer.openCalendar": "Open Calendar",
+    "prayer.reply.title": "Response",
+    "prayer.reply.section": "Responses",
+    "prayer.reply.add": "Add Response",
+    "prayer.reply.addTitle": "Add Response to Prayer Note",
+    "prayer.reply.editTitle": "Edit Response",
+    "prayer.reply.empty": "",
+    "prayer.reply.parentLabel": "Original Note",
+    "prayer.reply.bodyLabel": "Your Response",
+    "prayer.reply.bodyHint":
+        "Write what you received, how you responded, or what you are still praying through.",
+    "prayer.reply.scriptureLabel": "Related Scripture",
+    "prayer.reply.scriptureHint":
+        "Add a verse, reference, or short passage that stays with this note.",
+    "prayer.reply.saved": "Response saved.",
+    "prayer.reply.updated": "Response updated.",
+    "prayer.reply.deleted": "Response deleted.",
+    "prayer.reply.deleteTitle": "Delete this response?",
+    "prayer.reply.deleteBody":
+        "This response will be removed from the note. This action cannot be undone.",
     "prayer.quote.body": "\"Peace I leave with you; my peace I give to you.\"",
     "prayer.quote.reference": "JOHN 14:27",
     "prayer.eventAdded": "Event added to your calendar.",
@@ -343,25 +359,20 @@ class AppStrings {
         "마음에 남은 기도를 가까이 두세요.\n다시 떠올리고 싶을 때 언제든 여기로 돌아오면 됩니다.",
     "feed.savedLoading": "저장한 기도를 불러오는 중...",
     "feed.savedEmptyTitle": "저장한 기도가 아직 없어요.",
-    "feed.savedEmptyBody":
-        "마음에 남는 기도에 북마크를 누르면 여기에 모입니다.",
+    "feed.savedEmptyBody": "마음에 남는 기도에 북마크를 누르면 여기에 모입니다.",
     "feed.searchHeaderIdleTitle": "기도를 검색해 보세요.",
-    "feed.searchHeaderIdleBody":
-        "단어, 주제, 짧은 문구로\n공동체 피드를 검색할 수 있어요.",
+    "feed.searchHeaderIdleBody": "단어, 주제, 짧은 문구로\n공동체 피드를 검색할 수 있어요.",
     "feed.searchHeaderShortTitle": "조금만 더 입력해 주세요.",
     "feed.searchHeaderShortBody": "피드를 검색하려면 2글자 이상 입력해 주세요.",
     "feed.searchHeaderResultsTitle": "검색 결과.",
     "feed.searchHeaderResultsBody": "\"{query}\"이(가) 언급된 기도를 보여드려요.",
     "feed.searchLoading": "기도를 검색하는 중...",
     "feed.searchEmptyIdleTitle": "검색어를 입력해 보세요.",
-    "feed.searchEmptyIdleBody":
-        "희망, 치유, 가족, 평안 같은 단어로 시작해 보세요.",
+    "feed.searchEmptyIdleBody": "희망, 치유, 가족, 평안 같은 단어로 시작해 보세요.",
     "feed.searchEmptyShortTitle": "2글자 이상 입력해 주세요.",
-    "feed.searchEmptyShortBody":
-        "너무 짧은 검색어는 결과가 불안정해서 2글자부터 검색돼요.",
+    "feed.searchEmptyShortBody": "너무 짧은 검색어는 결과가 불안정해서 2글자부터 검색돼요.",
     "feed.searchEmptyResultsTitle": "일치하는 기도가 없어요.",
-    "feed.searchEmptyResultsBody":
-        "더 짧은 문구나 다른 키워드로 다시 시도해 보세요.",
+    "feed.searchEmptyResultsBody": "더 짧은 문구나 다른 키워드로 다시 시도해 보세요.",
     "feed.favoriteSaved": "즐겨찾기에 저장했어요.",
     "feed.favoriteRemoved": "즐겨찾기에서 제거했어요.",
     "feed.deleted": "기도를 삭제했어요.",
@@ -382,10 +393,8 @@ class AppStrings {
     "feed.urgent.default": "긴급 기도는 쿨다운 시간에 따라 제한됩니다.",
     "feed.urgent.enabled":
         "시간 민감한 기도 요청일 때 사용하세요. 긴급 기도는 {duration}마다 한 번만 작성할 수 있어요.",
-    "feed.urgent.cooldownOnly":
-        "긴급 기도는 {duration}에 한 번만 작성할 수 있어요.",
-    "feed.urgent.availableAgain":
-        "{date} {time}부터 다시 긴급 기도를 사용할 수 있어요.",
+    "feed.urgent.cooldownOnly": "긴급 기도는 {duration}에 한 번만 작성할 수 있어요.",
+    "feed.urgent.availableAgain": "{date} {time}부터 다시 긴급 기도를 사용할 수 있어요.",
     "feed.urgent.sectionTitle": "긴급 기도",
     "feed.urgent.sectionBody": "가장 최근 등록된 긴급 기도 5개를 보여드려요.",
     "feed.detailTitle": "기도 상세",
@@ -403,16 +412,13 @@ class AppStrings {
     "feed.reportDialogHint": "어떤 일이 있었는지 알려주세요.",
     "feed.reportSubmit": "신고하기",
     "feed.deleteDialogTitle": "이 기도를 삭제할까요?",
-    "feed.deleteDialogBody":
-        "이 기도는 피드에서 삭제되며 되돌릴 수 없습니다.",
+    "feed.deleteDialogBody": "이 기도는 피드에서 삭제되며 되돌릴 수 없습니다.",
     "feed.draftResumeTitle": "저장된 임시글이 있어요",
-    "feed.draftResumeBody":
-        "이미 작성 중인 기도 초안이 있습니다. 이어서 작성할지, 새로 시작할지 선택해 주세요.",
+    "feed.draftResumeBody": "이미 작성 중인 기도 초안이 있습니다. 이어서 작성할지, 새로 시작할지 선택해 주세요.",
     "feed.draftResumeStartNew": "새로 작성",
     "feed.draftResumeContinue": "이어쓰기",
     "feed.reportedTitle": "이미 신고했어요",
-    "feed.reportedBody":
-        "이 기도는 이미 신고하셨습니다. 알려주셔서 감사합니다.",
+    "feed.reportedBody": "이 기도는 이미 신고하셨습니다. 알려주셔서 감사합니다.",
     "feed.editExpiredTitle": "수정할 수 없어요",
     "feed.editExpiredBody": "이 기도는 게시 후 1시간 이내에만 수정할 수 있어요.",
     "feed.authorAnonymous": "{feedNumber} 익명",
@@ -435,17 +441,14 @@ class AppStrings {
     "reaction.withYou": "함께해요",
     "reaction.peace": "평안",
     "report.reason.notPrayer.title": "기도가 아님",
-    "report.reason.notPrayer.description":
-        "실제 기도 요청이나 기도 내용이 아닌 게시물입니다.",
+    "report.reason.notPrayer.description": "실제 기도 요청이나 기도 내용이 아닌 게시물입니다.",
     "report.reason.abusive.title": "욕설 또는 혐오",
     "report.reason.abusive.description":
         "욕설, 인신공격, 명예훼손, 괴롭힘, 혐오 표현이 포함된 내용입니다.",
     "report.reason.promotional.title": "홍보 또는 무관한 내용",
-    "report.reason.promotional.description":
-        "광고, 스팸 또는 이 앱의 목적과 맞지 않는 게시물입니다.",
+    "report.reason.promotional.description": "광고, 스팸 또는 이 앱의 목적과 맞지 않는 게시물입니다.",
     "report.reason.other.title": "기타",
-    "report.reason.other.description":
-        "그 외 검토가 필요한 내용입니다. 자세한 내용을 적어 주세요.",
+    "report.reason.other.description": "그 외 검토가 필요한 내용입니다. 자세한 내용을 적어 주세요.",
     "prayer.calendar": "캘린더",
     "prayer.reflections": "묵상노트",
     "prayer.hero.calendarTitle": "날들을 기도로 품어보세요.",
@@ -466,12 +469,25 @@ class AppStrings {
     "prayer.linkedNotes.one": "기도 노트 1개가 연결되어 있어요.",
     "prayer.linkedNotes.other": "기도 노트 {count}개가 연결되어 있어요.",
     "prayer.emptyNotebookTitle": "아직 노트가 조용하네요.",
-    "prayer.emptyNotebookBody":
-        "간단한 하루 묵상부터 시작하거나, 먼저 캘린더를 열어 특정 이벤트에 기도 노트를 연결해 보세요.",
+    "prayer.emptyNotebookBody": "간단한 하루 묵상부터 시작하고 오늘 마음에 있는 기도를 기록해 보세요.",
     "prayer.dailyReflection": "하루 묵상",
-    "prayer.openCalendar": "캘린더 열기",
-    "prayer.quote.body":
-        "\"평안을 너희에게 끼치노니 곧 나의 평안을 너희에게 주노라.\"",
+    "prayer.reply.title": "응답",
+    "prayer.reply.section": "응답",
+    "prayer.reply.add": "응답 남기기",
+    "prayer.reply.addTitle": "기도 노트에 응답 남기기",
+    "prayer.reply.editTitle": "응답 수정",
+    "prayer.reply.empty": "",
+    "prayer.reply.parentLabel": "원문 노트",
+    "prayer.reply.bodyLabel": "내 응답",
+    "prayer.reply.bodyHint": "어떤 응답을 받았는지, 지금 무엇을 붙들고 기도하는지 적어 보세요.",
+    "prayer.reply.scriptureLabel": "관련 말씀 구절",
+    "prayer.reply.scriptureHint": "이 노트와 함께 붙들고 싶은 말씀이나 구절을 남겨 보세요.",
+    "prayer.reply.saved": "응답이 저장되었어요.",
+    "prayer.reply.updated": "응답이 수정되었어요.",
+    "prayer.reply.deleted": "응답이 삭제되었어요.",
+    "prayer.reply.deleteTitle": "이 응답을 삭제할까요?",
+    "prayer.reply.deleteBody": "이 응답은 노트에서 삭제되며 되돌릴 수 없습니다.",
+    "prayer.quote.body": "\"평안을 너희에게 끼치노니 곧 나의 평안을 너희에게 주노라.\"",
     "prayer.quote.reference": "요한복음 14:27",
     "prayer.eventAdded": "이벤트를 캘린더에 추가했어요.",
     "prayer.eventUpdated": "이벤트를 수정했어요.",
@@ -489,8 +505,7 @@ class AppStrings {
     "prayer.deleteEventBody":
         "이 이벤트는 삭제됩니다. 연결된 기도 노트는 노트북에 남고, 이벤트 연결만 해제됩니다.",
     "prayer.deleteNoteTitle": "이 기도 노트를 삭제할까요?",
-    "prayer.deleteNoteBody":
-        "이 기도 노트는 노트북에서 삭제되며 되돌릴 수 없습니다.",
+    "prayer.deleteNoteBody": "이 기도 노트는 노트북에서 삭제되며 되돌릴 수 없습니다.",
     "prayer.field.date": "날짜",
     "prayer.field.title": "제목",
     "prayer.field.details": "상세 내용",
@@ -597,13 +612,11 @@ class AppStrings {
       _text("feed.urgent.enabled", <String, String>{"duration": duration});
   String urgentCooldownOnly(String duration) =>
       _text("feed.urgent.cooldownOnly", <String, String>{"duration": duration});
-  String urgentAvailableAgain({
-    required String date,
-    required String time,
-  }) => _text(
-    "feed.urgent.availableAgain",
-    <String, String>{"date": date, "time": time},
-  );
+  String urgentAvailableAgain({required String date, required String time}) =>
+      _text("feed.urgent.availableAgain", <String, String>{
+        "date": date,
+        "time": time,
+      });
   String get urgentSectionTitle => _text("feed.urgent.sectionTitle");
   String get urgentSectionBody => _text("feed.urgent.sectionBody");
   String get feedDetailTitle => _text("feed.detailTitle");
@@ -656,8 +669,7 @@ class AppStrings {
   String get prayerHeroCalendarBody => _text("prayer.hero.calendarBody");
   String get prayerHeroReflectionsTitle =>
       _text("prayer.hero.reflectionsTitle");
-  String get prayerHeroReflectionsBody =>
-      _text("prayer.hero.reflectionsBody");
+  String get prayerHeroReflectionsBody => _text("prayer.hero.reflectionsBody");
   String get prayerHeroNotebookSuffix => _text("prayer.hero.notebookSuffix");
   String get prayerTimeline => _text("prayer.timeline");
   String get prayerAddEvent => _text("prayer.addEvent");
@@ -673,7 +685,22 @@ class AppStrings {
   String get prayerEmptyNotebookTitle => _text("prayer.emptyNotebookTitle");
   String get prayerEmptyNotebookBody => _text("prayer.emptyNotebookBody");
   String get prayerDailyReflection => _text("prayer.dailyReflection");
-  String get prayerOpenCalendar => _text("prayer.openCalendar");
+  String get prayerReplyTitle => _text("prayer.reply.title");
+  String get prayerReplySection => _text("prayer.reply.section");
+  String get prayerAddReply => _text("prayer.reply.add");
+  String get prayerAddReplyTitle => _text("prayer.reply.addTitle");
+  String get prayerEditReplyTitle => _text("prayer.reply.editTitle");
+  String get prayerReplyEmpty => _text("prayer.reply.empty");
+  String get prayerReplyParentLabel => _text("prayer.reply.parentLabel");
+  String get prayerReplyBodyLabel => _text("prayer.reply.bodyLabel");
+  String get prayerReplyBodyHint => _text("prayer.reply.bodyHint");
+  String get prayerReplyScriptureLabel => _text("prayer.reply.scriptureLabel");
+  String get prayerReplyScriptureHint => _text("prayer.reply.scriptureHint");
+  String get prayerReplySaved => _text("prayer.reply.saved");
+  String get prayerReplyUpdated => _text("prayer.reply.updated");
+  String get prayerReplyDeleted => _text("prayer.reply.deleted");
+  String get prayerDeleteReplyTitle => _text("prayer.reply.deleteTitle");
+  String get prayerDeleteReplyBody => _text("prayer.reply.deleteBody");
   String get prayerQuoteBody => _text("prayer.quote.body");
   String get prayerQuoteReference => _text("prayer.quote.reference");
   String get prayerEventAdded => _text("prayer.eventAdded");
