@@ -77,6 +77,7 @@ class _FeedScreenState extends State<FeedScreen> {
   bool _isLoadingUrgentEligibility = false;
   bool _hasResolvedLatestDraft = false;
   bool _isSearchMode = false;
+  final Set<String> _reactionPostsInFlight = <String>{};
   String _composerBaselineBody = "";
   bool _composerBaselineAnonymous = _defaultAnonymousPosting;
   bool _composerBaselineUrgent = false;
@@ -237,7 +238,34 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   void _handleReactionSelected(FeedPost post, FeedReactionKind reaction) {
-    unawaited(_controller.reactToPost(post.id, reaction));
+    if (_reactionPostsInFlight.contains(post.id)) {
+      return;
+    }
+
+    setState(() {
+      _reactionPostsInFlight.add(post.id);
+    });
+    unawaited(_submitReaction(post.id, reaction));
+  }
+
+  Future<void> _submitReaction(String postId, FeedReactionKind reaction) async {
+    try {
+      await _controller.reactToPost(postId, reaction);
+    } catch (error) {
+      if (mounted) {
+        _showNotice(strings.localizeFeedError(mapFeedErrorMessage(error)));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _reactionPostsInFlight.remove(postId);
+        });
+      }
+    }
+  }
+
+  bool _isReactionEnabledForPost(FeedPost post) {
+    return !_reactionPostsInFlight.contains(post.id);
   }
 
   Future<bool> _handleFavoriteToggled(FeedPost post) async {
@@ -393,6 +421,7 @@ class _FeedScreenState extends State<FeedScreen> {
           scrollController: _searchScrollController,
           onRetry: _retrySearch,
           onLoadMore: _controller.loadMoreSearch,
+          isReactionEnabledForPost: _isReactionEnabledForPost,
           onOpenDetail: (FeedPost post) => unawaited(_openDetail(post)),
           onReact: _handleReactionSelected,
           onToggleFavorite: (FeedPost post) =>
@@ -471,6 +500,7 @@ class _FeedScreenState extends State<FeedScreen> {
               scrollController: _favoritesScrollController,
               onRetry: _controller.refreshFavorites,
               onLoadMore: _controller.loadMoreFavorites,
+              isReactionEnabledForPost: _isReactionEnabledForPost,
               onOpenDetail: (FeedPost post) => unawaited(_openDetail(post)),
               onReact: _handleReactionSelected,
               onToggleFavorite: (FeedPost post) =>
@@ -507,6 +537,7 @@ class _FeedScreenState extends State<FeedScreen> {
               onRetry: _controller.refreshFeed,
               onRetryUrgent: _controller.refreshFeed,
               onLoadMore: _controller.loadMore,
+              isReactionEnabledForPost: _isReactionEnabledForPost,
               onOpenDetail: (FeedPost post) => unawaited(_openDetail(post)),
               onReact: _handleReactionSelected,
               onToggleFavorite: (FeedPost post) =>

@@ -37,13 +37,17 @@ class _PrayerReactionButtonState extends State<PrayerReactionButton> {
 
   @override
   Widget build(BuildContext context) {
-    const FeedReactionOption primaryOption = FeedReactions.amen;
+    final FeedReactionOption primaryOption =
+        widget.selectedReaction == null
+        ? FeedReactions.amen
+        : FeedReactions.fromKind(widget.selectedReaction!);
     final AppStrings strings = context.strings;
-    final bool isAmenSelected =
-        widget.selectedReaction == FeedReactionKind.amen;
-    final Color primaryColor = isAmenSelected
+    final bool hasSelectedReaction = widget.selectedReaction != null;
+    final Color primaryColor = hasSelectedReaction
         ? EditorialColors.primary
         : EditorialColors.outline;
+    final FeedReactionKind primaryReaction =
+        widget.selectedReaction ?? FeedReactionKind.amen;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -57,7 +61,7 @@ class _PrayerReactionButtonState extends State<PrayerReactionButton> {
             splashColor: Colors.transparent,
             highlightColor: Colors.transparent,
             borderRadius: BorderRadius.circular(999),
-            onTap: () => _selectReaction(FeedReactionKind.amen),
+            onTap: () => _selectReaction(primaryReaction),
             onLongPress: _showReactionTray,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
@@ -223,7 +227,6 @@ class _ReactionTray extends StatelessWidget {
                   child: _ReactionTrayItem(
                     option: option,
                     isSelected: option.kind == selectedReaction,
-                    count: summary.countFor(option.kind),
                     onTap: () => onSelected(option.kind),
                   ),
                 ),
@@ -239,13 +242,11 @@ class _ReactionTrayItem extends StatefulWidget {
   const _ReactionTrayItem({
     required this.option,
     required this.isSelected,
-    required this.count,
     required this.onTap,
   });
 
   final FeedReactionOption option;
   final bool isSelected;
-  final int count;
   final VoidCallback onTap;
 
   @override
@@ -294,10 +295,6 @@ class _ReactionTrayItemState extends State<_ReactionTrayItem> {
               ),
               const SizedBox(height: 4),
               Text(widget.option.label(strings), style: FeedStyles.trayLabel),
-              if (widget.count > 0) ...<Widget>[
-                const SizedBox(height: 2),
-                Text("${widget.count}", style: FeedStyles.trayCount),
-              ],
             ],
           ),
         ),

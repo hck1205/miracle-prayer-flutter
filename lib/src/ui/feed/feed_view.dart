@@ -30,6 +30,7 @@ class FeedView extends StatelessWidget {
     required this.loadingMessage,
     required this.emptyTitle,
     required this.emptyBody,
+    this.isReactionEnabledForPost,
     this.urgentState,
     this.onRetryUrgent,
   });
@@ -49,6 +50,7 @@ class FeedView extends StatelessWidget {
   final String loadingMessage;
   final String emptyTitle;
   final String emptyBody;
+  final bool Function(FeedPost post)? isReactionEnabledForPost;
   final FeedState? urgentState;
   final VoidCallback? onRetryUrgent;
 
@@ -153,6 +155,8 @@ class FeedView extends StatelessWidget {
                       (BuildContext context, int index) {
                         final FeedPost post = state.items[index];
                         final bool isLast = index == state.items.length - 1;
+                        final bool isReactionEnabled =
+                            isReactionEnabledForPost?.call(post) ?? true;
 
                         return EditorialCenteredViewport(
                           maxWidth: 620,
@@ -167,6 +171,7 @@ class FeedView extends StatelessWidget {
                                   onOpenDetail: () => onOpenDetail(post),
                                   onReact: (FeedReactionKind reaction) =>
                                       onReact(post, reaction),
+                                  isReactionEnabled: isReactionEnabled,
                                   onToggleFavorite: () =>
                                       onToggleFavorite(post),
                                   onEdit: () => onEdit(post),

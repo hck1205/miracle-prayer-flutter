@@ -14,6 +14,7 @@ class PrayerCard extends StatelessWidget {
     required this.item,
     required this.onOpenDetail,
     required this.onReact,
+    this.isReactionEnabled = true,
     required this.onToggleFavorite,
     required this.onEdit,
     required this.onDelete,
@@ -23,6 +24,7 @@ class PrayerCard extends StatelessWidget {
   final FeedPost item;
   final VoidCallback onOpenDetail;
   final ValueChanged<FeedReactionKind> onReact;
+  final bool isReactionEnabled;
   final VoidCallback onToggleFavorite;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -78,10 +80,16 @@ class PrayerCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          PrayerReactionButton(
-            selectedReaction: item.viewerReaction,
-            summary: item.reactionSummary,
-            onSelected: onReact,
+          Opacity(
+            opacity: isReactionEnabled ? 1 : 0.55,
+            child: IgnorePointer(
+              ignoring: !isReactionEnabled,
+              child: PrayerReactionButton(
+                selectedReaction: item.viewerReaction,
+                summary: item.reactionSummary,
+                onSelected: onReact,
+              ),
+            ),
           ),
         ],
       ),
