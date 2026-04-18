@@ -129,6 +129,25 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  Future<void> updateProfile({required String name}) async {
+    final AuthSession? currentSession = _state.session;
+    if (currentSession == null) {
+      return;
+    }
+
+    final AuthenticatedUser updatedUser = await _authApiClient
+        .updateCurrentUserProfile(
+          currentSession.accessToken,
+          name: name,
+        );
+    final AuthSession nextSession = currentSession.copyWith(
+      user: updatedUser,
+    );
+
+    await _sessionStorage.write(nextSession);
+    _updateState(_state.withSession(nextSession));
+  }
+
   @override
   void dispose() {
     _isDisposed = true;

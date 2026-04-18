@@ -14,10 +14,12 @@ class FeedPageShell extends StatefulWidget {
     super.key,
     required this.session,
     required this.onLogout,
+    required this.onUpdateProfileName,
   });
 
   final AuthSession session;
   final VoidCallback onLogout;
+  final Future<void> Function({required String name}) onUpdateProfileName;
 
   @override
   State<FeedPageShell> createState() => _FeedPageState();
@@ -54,6 +56,7 @@ class _FeedPageState extends State<FeedPageShell> {
     return FeedScreen(
       session: widget.session,
       onLogout: widget.onLogout,
+      onUpdateProfileName: widget.onUpdateProfileName,
       controller: _controller,
       personalPrayerController: _personalPrayerController,
     );

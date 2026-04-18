@@ -110,12 +110,26 @@ class AppStrings {
     "auth.signInWithGoogle": "Sign in with Google",
     "auth.continueAsGuest": "Continue as Guest",
     "auth.logout": "Log out",
+    "auth.menu.account": "Account",
+    "auth.menu.language": "Language",
+    "auth.menu.settings": "Settings",
     "auth.or": "OR",
     "auth.error.backendRequestFailed":
         "Backend request failed. Make sure miracle-prayer-backend is running.",
     "auth.error.googleInitFailed":
         "Google sign-in could not initialize. Check GOOGLE_CLIENT_ID.",
     "auth.error.googleCanceled": "Google sign-in was canceled.",
+    "settings.title": "Settings",
+    "settings.profileSection": "Profile",
+    "settings.profileTitle": "My information",
+    "settings.profileBody":
+        "Update the name shown across your prayer composer and private notebook.",
+    "settings.editProfile": "Edit my info",
+    "settings.nameLabel": "Name",
+    "settings.emailLabel": "Email",
+    "settings.nameHint": "How should we call you?",
+    "settings.saveProfile": "Save changes",
+    "settings.profileUpdated": "Your information was updated.",
     "feed.title": "Prayers",
     "feed.searchPlaceholder": "Search prayers",
     "feed.feedHeaderTitle": "A collective breath.",
@@ -340,12 +354,25 @@ class AppStrings {
     "auth.signInWithGoogle": "Google로 로그인",
     "auth.continueAsGuest": "게스트로 계속하기",
     "auth.logout": "로그아웃",
+    "auth.menu.account": "계정",
+    "auth.menu.language": "언어",
+    "auth.menu.settings": "설정",
     "auth.or": "또는",
     "auth.error.backendRequestFailed":
         "백엔드 요청에 실패했습니다. miracle-prayer-backend가 실행 중인지 확인해 주세요.",
     "auth.error.googleInitFailed":
         "Google 로그인 초기화에 실패했습니다. GOOGLE_CLIENT_ID를 확인해 주세요.",
     "auth.error.googleCanceled": "Google 로그인이 취소되었습니다.",
+    "settings.title": "설정",
+    "settings.profileSection": "프로필",
+    "settings.profileTitle": "내 정보",
+    "settings.profileBody": "기도 노트에 표시되는 이름을 수정할 수 있습니다.",
+    "settings.editProfile": "내 정보 수정",
+    "settings.nameLabel": "이름",
+    "settings.emailLabel": "이메일",
+    "settings.nameHint": "어떻게 불러드릴까요?",
+    "settings.saveProfile": "변경사항 저장",
+    "settings.profileUpdated": "내 정보가 업데이트되었습니다.",
     "feed.title": "기도",
     "feed.searchPlaceholder": "기도 검색",
     "feed.feedHeaderTitle": "함께 쉬어가는 숨.",
@@ -562,7 +589,20 @@ class AppStrings {
   String get authSignInWithGoogle => _text("auth.signInWithGoogle");
   String get authContinueAsGuest => _text("auth.continueAsGuest");
   String get authLogout => _text("auth.logout");
+  String get authMenuAccount => _text("auth.menu.account");
+  String get authMenuLanguage => _text("auth.menu.language");
+  String get authMenuSettings => _text("auth.menu.settings");
   String get authOr => _text("auth.or");
+  String get settingsTitle => _text("settings.title");
+  String get settingsProfileSection => _text("settings.profileSection");
+  String get settingsProfileTitle => _text("settings.profileTitle");
+  String get settingsProfileBody => _text("settings.profileBody");
+  String get settingsEditProfile => _text("settings.editProfile");
+  String get settingsNameLabel => _text("settings.nameLabel");
+  String get settingsEmailLabel => _text("settings.emailLabel");
+  String get settingsNameHint => _text("settings.nameHint");
+  String get settingsSaveProfile => _text("settings.saveProfile");
+  String get settingsProfileUpdated => _text("settings.profileUpdated");
   String get feedTitle => _text("feed.title");
   String get feedSearchPlaceholder => _text("feed.searchPlaceholder");
   String get feedHeaderTitle => _text("feed.feedHeaderTitle");

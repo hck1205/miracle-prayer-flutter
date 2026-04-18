@@ -6,7 +6,14 @@ import "../../localization/app_strings.dart";
 String formatFeedAuthorLabel(BuildContext context, FeedPost post) {
   final AppStrings strings = context.strings;
   final String feedNumber = post.postNumber > 0 ? "#${post.postNumber}" : "#--";
-  return strings.feedAuthorAnonymous(feedNumber);
+  if (post.isAnonymous) {
+    return strings.feedAuthorAnonymous(feedNumber);
+  }
+
+  final String authorLabel = post.authorLabel.trim();
+  return authorLabel.isEmpty
+      ? strings.feedAuthorAnonymous(feedNumber)
+      : authorLabel;
 }
 
 String formatFeedPublishedTimeAgo(

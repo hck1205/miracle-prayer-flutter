@@ -115,7 +115,11 @@ class _AuthPageState extends State<AuthPage> {
           );
         }
 
-        return FeedPageShell(session: session, onLogout: _controller.logout);
+        return FeedPageShell(
+          session: session,
+          onLogout: _controller.logout,
+          onUpdateProfileName: _controller.updateProfile,
+        );
       },
     );
   }

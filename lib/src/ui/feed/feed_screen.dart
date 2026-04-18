@@ -13,7 +13,6 @@ import "../../feed/feed_report.dart";
 import "../../feed/feed_reaction.dart";
 import "../../localization/app_strings.dart";
 import "../../personal_prayer/personal_prayer_controller.dart";
-import "feed_account_sheet.dart";
 import "feed_bottom_bar.dart";
 import "feed_create_view.dart";
 import "feed_detail_screen.dart";
@@ -24,21 +23,25 @@ import "feed_post_lookup.dart";
 import "feed_reported_notice_dialog.dart";
 import "feed_report_dialog.dart";
 import "feed_scroll_pagination.dart";
+import "feed_side_drawer.dart";
 import "feed_top_bar.dart";
 import "feed_view.dart";
 import "../personal_prayer/personal_prayer_screen.dart";
+import "../settings/settings_screen.dart";
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({
     super.key,
     required this.session,
     required this.onLogout,
+    required this.onUpdateProfileName,
     required this.controller,
     required this.personalPrayerController,
   });
 
   final AuthSession session;
   final VoidCallback onLogout;
+  final Future<void> Function({required String name}) onUpdateProfileName;
   final FeedController controller;
   final PersonalPrayerController personalPrayerController;
 
@@ -61,6 +64,7 @@ class _FeedScreenState extends State<FeedScreen> {
   late final TextEditingController _composerController;
   late final TextEditingController _searchController;
   late final FocusNode _searchFocusNode;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   FeedDraft? _activeDraft;
   FeedDraft? _cachedLatestDraft;
   FeedUrgentEligibility? _urgentEligibility;
@@ -123,7 +127,13 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: EditorialColors.surface,
+      endDrawer: FeedSideDrawer(
+        session: widget.session,
+        onOpenSettings: _openSettings,
+        onLogout: widget.onLogout,
+      ),
       body: Column(
         children: <Widget>[
           SafeArea(
@@ -132,7 +142,7 @@ class _FeedScreenState extends State<FeedScreen> {
               maxWidth: 620,
               padding: const EdgeInsets.fromLTRB(24, 10, 24, 8),
               child: FeedTopBar(
-                onMenuTap: _showAccountSheet,
+                onMenuTap: _openSideMenu,
                 onSearchTap: _enterSearchMode,
                 isSearchMode: _isSearchMode,
                 searchController: _searchController,
@@ -159,12 +169,19 @@ class _FeedScreenState extends State<FeedScreen> {
     );
   }
 
-  void _showAccountSheet() {
-    unawaited(
-      showFeedAccountSheet(
-        context,
-        session: widget.session,
-        onLogout: widget.onLogout,
+  void _openSideMenu() {
+    _scaffoldKey.currentState?.openEndDrawer();
+  }
+
+  Future<void> _openSettings() {
+    return Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) {
+          return SettingsScreen(
+            session: widget.session,
+            onUpdateProfileName: widget.onUpdateProfileName,
+          );
+        },
       ),
     );
   }
@@ -808,13 +825,6 @@ class _FeedScreenState extends State<FeedScreen> {
       }
 
       if (latestDraft == null) {
-        setState(() {
-          _composerBaselineBody = "";
-          _composerBaselineAnonymous = _defaultAnonymousPosting;
-          _composerBaselineUrgent = false;
-          _postAnonymously = _defaultAnonymousPosting;
-          _postAsUrgent = false;
-        });
         return;
       }
 

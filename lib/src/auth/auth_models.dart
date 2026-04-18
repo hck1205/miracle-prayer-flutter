@@ -1,6 +1,8 @@
 import "dart:convert";
 
 class AuthenticatedUser {
+  static const Object _sentinel = Object();
+
   const AuthenticatedUser({
     required this.id,
     required this.email,
@@ -18,6 +20,18 @@ class AuthenticatedUser {
   final String id;
   final String email;
   final String? name;
+
+  AuthenticatedUser copyWith({
+    String? id,
+    String? email,
+    Object? name = _sentinel,
+  }) {
+    return AuthenticatedUser(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      name: identical(name, _sentinel) ? this.name : name as String?,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{"id": id, "email": email, "name": name};

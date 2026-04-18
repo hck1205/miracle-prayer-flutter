@@ -46,6 +46,19 @@ class AuthApiClient {
     return AuthenticatedUser.fromJson(json);
   }
 
+  Future<AuthenticatedUser> updateCurrentUserProfile(
+    String accessToken, {
+    required String name,
+  }) async {
+    final Map<String, dynamic> json = await _jsonApiClient.patchJson(
+      "/v1/auth/me",
+      body: <String, dynamic>{"name": name},
+      headers: _jsonApiClient.bearerHeaders(accessToken),
+    );
+
+    return AuthenticatedUser.fromJson(json);
+  }
+
   Future<void> logout(String accessToken) async {
     await _jsonApiClient.postEmpty(
       "/v1/auth/logout",

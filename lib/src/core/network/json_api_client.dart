@@ -40,6 +40,23 @@ class JsonApiClient {
     return _decodeJsonMap(response);
   }
 
+  Future<Map<String, dynamic>> patchJson(
+    String path, {
+    required Map<String, dynamic> body,
+    Map<String, String>? headers,
+  }) async {
+    final http.Response response = await _httpClient.patch(
+      _buildUri(path),
+      headers: <String, String>{
+        "Content-Type": "application/json",
+        ...?headers,
+      },
+      body: jsonEncode(body),
+    );
+
+    return _decodeJsonMap(response);
+  }
+
   Future<void> postEmpty(
     String path, {
     Map<String, dynamic>? body,
